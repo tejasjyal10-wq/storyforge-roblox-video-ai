@@ -1,0 +1,9 @@
+{
+  "name": "storyforge-roblox-video-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StoryForge Roblox-style video generation app with server-side provider adapter",
+  "scripts": {"start":"node server.js", "test":"node --test"},
+  "dependencies": {"express":"^4.21.2"},
+  "engines": {"node":">=18"}
+}
