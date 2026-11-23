@@ -3,6 +3,7 @@ const path = require('path');
 const app = express();
 app.use(express.json({limit:'2mb'}));
 app.use(express.static(path.join(__dirname,'public')));
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
 const BASE = (process.env.AGNES_BASE_URL || 'https://apihub.agnes-ai.com').replace(/\/$/, '');
 const MODEL = process.env.AGNES_VIDEO_MODEL || 'agnes-video-2.5-flash';
 const KEY = process.env.AGNES_API_KEY;
