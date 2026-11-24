@@ -4,6 +4,8 @@ const path = require('path');
 const app = express();
 
 app.use(express.json({ limit: '2mb' }));
+const { createLearningRouter } = require('./storyforge-learning');
+app.use('/api/learning', createLearningRouter());
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Allow browser requests to the backend
