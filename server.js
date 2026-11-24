@@ -6,16 +6,20 @@ const app = express();
 app.use(express.json({ limit: '2mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// CORS for Cloudflare frontend
+// Allow browser requests to the backend
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
 
-app.get('/', (_req, res) => res.send('StoryForge backend is running.'));
+// SERVE THE ACTUAL STORYFORGE WEBSITE
+app.get('/', (_req, res) => {
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
 const BASE = (process.env.AGNES_BASE_URL || 'https://apihub.agnes-ai.com').replace(/\/$/, '');
 const MODEL = process.env.AGNES_VIDEO_MODEL || 'agnes-video-2.5-flash';
@@ -23,8 +27,10 @@ const KEY = process.env.AGNES_API_KEY;
 
 const jobs = new Map();
 const generationRequests = new Map();
+
 const GENERATION_LIMIT = 3;
 const GENERATION_WINDOW_MS = 60 * 60 * 1000;
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const RETRY_DELAYS_MS = [30_000, 60_000, 120_000];
 
@@ -44,6 +50,7 @@ async function apiFetch(url, opts = {}) {
 
   const raw = await response.text();
   let data;
+
   try {
     data = JSON.parse(raw);
   } catch {
@@ -57,13 +64,16 @@ async function apiFetch(url, opts = {}) {
     error.providerData = data;
     throw error;
   }
+
   return data;
 }
 
+// Queue-full retry handler
 async function submitWithQueueRetries(job) {
   const robloxStyle =
-    'Roblox-inspired 3D game animation, blocky toy-like avatar proportions, consistent visual design, clean render. ';
-  const finalPrompt = robloxStyle + job.prompt;
+    'Roblox-inspired 3D game animation, blocky toy-like avatar proportions, consistent visual design, clean render. ' +
+    job.prompt;
+
   let retries = 0;
 
   while (true) {
@@ -76,7 +86,7 @@ async function submitWithQueueRetries(job) {
         method: 'POST',
         body: JSON.stringify({
           model: MODEL,
-          prompt: finalPrompt,
+          prompt: robloxStyle,
           mode: 'text',
           seconds: String(job.seconds),
           size: '720P',
@@ -85,28 +95,35 @@ async function submitWithQueueRetries(job) {
       });
 
       const videoId = data.video_id || data.id;
-      if (!videoId) throw new Error('Provider response did not include video_id.');
+
+      if (!videoId) {
+        throw new Error('Provider response did not include video_id.');
+      }
 
       job.videoId = videoId;
       job.status = 'processing';
       job.providerData = data;
       job.updatedAt = Date.now();
       return;
+
     } catch (error) {
       const isQueueFull =
-        error.status === 503 && /queue\s+is\s+full/i.test(error.message);
+        error.status === 503 &&
+        /queue\s+is\s+full/i.test(error.message);
 
       if (!isQueueFull || retries >= RETRY_DELAYS_MS.length) {
         job.status = 'failed';
         job.error = isQueueFull
           ? 'The video provider queue is still full after automatic retries. Please try again later.'
           : error.message;
+        job.providerData = error.providerData || null;
         job.updatedAt = Date.now();
         return;
       }
 
       const delay = RETRY_DELAYS_MS[retries];
       retries++;
+
       job.status = 'retry_wait';
       job.retryCount = retries;
       job.retryAfterMs = delay;
@@ -117,6 +134,7 @@ async function submitWithQueueRetries(job) {
   }
 }
 
+// Health check
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
@@ -126,6 +144,7 @@ app.get('/api/health', (_req, res) => {
   });
 });
 
+// Create video job
 app.post('/api/generate', (req, res) => {
   const now = Date.now();
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
@@ -142,16 +161,20 @@ app.post('/api/generate', (req, res) => {
 
   if (!providerReady()) {
     return res.status(503).json({
-      error: 'Video API is not configured. Add AGNES_API_KEY to backend environment.'
+      error: 'Video API is not configured. Add AGNES_API_KEY to the server environment.'
     });
   }
 
   const prompt = String(req.body?.prompt || '').trim();
+
   if (!prompt) {
-    return res.status(400).json({ error: 'Please enter a prompt.' });
+    return res.status(400).json({
+      error: 'Please enter a story or scene prompt.'
+    });
   }
 
   const seconds = Math.max(4, Math.min(12, Number(req.body.seconds) || 8));
+
   const aspectRatio = ['16:9', '9:16', '1:1'].includes(req.body.aspect_ratio)
     ? req.body.aspect_ratio
     : '16:9';
@@ -175,7 +198,12 @@ app.post('/api/generate', (req, res) => {
 
   jobs.set(jobId, job);
 
-  res.json({ jobId, status: 'queued', model: MODEL });
+  // Respond immediately; provider retries run in the background.
+  res.json({
+    jobId,
+    status: 'queued',
+    model: MODEL
+  });
 
   submitWithQueueRetries(job).catch(error => {
     job.status = 'failed';
@@ -184,6 +212,7 @@ app.post('/api/generate', (req, res) => {
   });
 });
 
+// Job status
 app.get('/api/jobs/:jobId', async (req, res) => {
   const job = jobs.get(req.params.jobId);
 
@@ -193,7 +222,10 @@ app.get('/api/jobs/:jobId', async (req, res) => {
     });
   }
 
-  if (!job.videoId || ['queued', 'submitting', 'retrying', 'retry_wait', 'failed'].includes(job.status)) {
+  if (
+    !job.videoId ||
+    ['queued', 'submitting', 'retrying', 'retry_wait', 'failed'].includes(job.status)
+  ) {
     return res.json({
       jobId: job.jobId,
       status: job.status,
@@ -218,16 +250,26 @@ app.get('/api/jobs/:jobId', async (req, res) => {
 
     const data = await apiFetch(`${BASE}/agnesapi?${params}`);
     const status = String(data.status || '').toLowerCase();
-    const url = data.url || data.video_url || data.output?.url || data.result?.url;
 
-    if (['completed', 'complete', 'success', 'succeeded', 'done'].includes(status) && url) {
+    const url =
+      data.url ||
+      data.video_url ||
+      data.output?.url ||
+      data.result?.url;
+
+    if (
+      ['completed', 'complete', 'success', 'succeeded', 'done'].includes(status) &&
+      url
+    ) {
       job.status = 'completed';
       job.videoUrl = url;
       job.providerData = data;
+
     } else if (['failed', 'error', 'cancelled'].includes(status)) {
       job.status = 'failed';
       job.error = data.error || data.message || 'Video generation failed';
       job.providerData = data;
+
     } else {
       job.status = status || 'processing';
       job.progress = Number(data.progress) || 0;
@@ -235,6 +277,7 @@ app.get('/api/jobs/:jobId', async (req, res) => {
 
     job.updatedAt = Date.now();
     res.json(job);
+
   } catch (error) {
     res.status(502).json({
       error: error.message,
@@ -244,11 +287,14 @@ app.get('/api/jobs/:jobId', async (req, res) => {
   }
 });
 
+// Start Express server
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`StoryForge running on port ${PORT}`));
+  app.listen(PORT, () => {
+    console.log(`StoryForge running on port ${PORT}`);
+  });
 }
 
 module.exports = { app, jobs };
-                                       
+      
