@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 const DEFAULT_BASE_URL = process.env.STORYFORGE_LLM_BASE_URL || 'https://api.openai.com/v1';
 const DEFAULT_MODEL = process.env.STORYFORGE_LLM_MODEL || 'gpt-4o-mini';
