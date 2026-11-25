@@ -1,15 +1,11 @@
+
 const express = require('express');
 const path = require('path');
 const app = express();
 
 app.use(express.json({ limit: '2mb' }));
 
-const { createLearningRouter } = require('./storyforge-learning');
-app.use('/api/learning', createLearningRouter());
-
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Allow browser requests to the backend
+// CORS
 app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
@@ -19,26 +15,94 @@ app.use((req, res, next) => {
   next();
 });
 
-// SERVE THE ACTUAL STORYFORGE WEBSITE
+// Learning API
+const { createLearningRouter } = require('./storyforge-learning');
+app.use('/api/learning', createLearningRouter());
+
+// Static website
+app.use(express.static(path.join(__dirname, 'public')));
+
 app.get('/', (_req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
 
+// Agnes configuration
 const BASE = (process.env.AGNES_BASE_URL || 'https://apihub.agnes-ai.com').replace(/\/$/, '');
 const MODEL = process.env.AGNES_VIDEO_MODEL || 'agnes-video-2.5-flash';
 const KEY = process.env.AGNES_API_KEY;
 
+// Job storage
 const jobs = new Map();
 const generationRequests = new Map();
 
-const GENERATION_LIMIT = 3;
-const GENERATION_WINDOW_MS = 60 * 60 * 1000;
+// Configurable quota
+const GENERATION_LIMIT = Math.max(
+  1,
+  Number(process.env.GENERATION_LIMIT) || 3
+);
+
+const GENERATION_WINDOW_MS = Math.max(
+  60_000,
+  Number(process.env.GENERATION_WINDOW_MS) || 60 * 60 * 1000
+);
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 const RETRY_DELAYS_MS = [30_000, 60_000, 120_000];
 
 function providerReady() {
   return Boolean(KEY && KEY.trim());
+}
+
+// Quota entries:
+// { id, timestamp, status: 'pending' | 'accepted' }
+//
+// Pending requests reserve slots to prevent simultaneous requests
+// from bypassing the hourly limit.
+
+function getQuotaEntries(ip, now = Date.now()) {
+  const entries = (generationRequests.get(ip) || [])
+    .filter(entry => now - entry.timestamp < GENERATION_WINDOW_MS);
+
+  generationRequests.set(ip, entries);
+  return entries;
+}
+
+function reserveQuota(ip, jobId) {
+  const now = Date.now();
+  const entries = getQuotaEntries(ip, now);
+
+  if (entries.length >= GENERATION_LIMIT) {
+    return null;
+  }
+
+  const reservation = {
+    id: jobId,
+    timestamp: now,
+    status: 'pending'
+  };
+
+  entries.push(reservation);
+  generationRequests.set(ip, entries);
+
+  return reservation;
+}
+
+function markQuotaAccepted(ip, reservation) {
+  const entries = getQuotaEntries(ip);
+
+  const entry = entries.find(item => item.id === reservation.id);
+
+  if (entry) {
+    entry.status = 'accepted';
+    entry.timestamp = Date.now();
+  }
+}
+
+function releaseQuota(ip, reservation) {
+  const entries = getQuotaEntries(ip);
+
+  const updated = entries.filter(item => item.id !== reservation.id);
+  generationRequests.set(ip, updated);
 }
 
 async function apiFetch(url, opts = {}) {
@@ -63,15 +127,17 @@ async function apiFetch(url, opts = {}) {
   if (!response.ok) {
     const message = data?.message || data?.error || raw.slice(0, 300);
     const error = new Error(`Provider ${response.status}: ${message}`);
+
     error.status = response.status;
     error.providerData = data;
+
     throw error;
   }
 
   return data;
 }
 
-// Queue-full retry handler
+// Submit video with automatic queue-full retries
 async function submitWithQueueRetries(job) {
   const robloxStyle =
     'Roblox-inspired 3D game animation, blocky toy-like avatar proportions, consistent visual design, clean render. ' +
@@ -103,10 +169,13 @@ async function submitWithQueueRetries(job) {
         throw new Error('Provider response did not include video_id.');
       }
 
+      // Provider accepted the job — quota is now consumed.
       job.videoId = videoId;
       job.status = 'processing';
       job.providerData = data;
       job.updatedAt = Date.now();
+
+      markQuotaAccepted(job.ip, job.reservation);
       return;
 
     } catch (error) {
@@ -119,8 +188,12 @@ async function submitWithQueueRetries(job) {
         job.error = isQueueFull
           ? 'The video provider queue is still full after automatic retries. Please try again later.'
           : error.message;
+
         job.providerData = error.providerData || null;
         job.updatedAt = Date.now();
+
+        // Provider did not accept the job. Release the quota slot.
+        releaseQuota(job.ip, job.reservation);
         return;
       }
 
@@ -143,7 +216,9 @@ app.get('/api/health', (_req, res) => {
     ok: true,
     providerConfigured: providerReady(),
     model: MODEL,
-    mode: providerReady() ? 'provider' : 'setup-required'
+    mode: providerReady() ? 'provider' : 'setup-required',
+    generationLimit: GENERATION_LIMIT,
+    generationWindowMs: GENERATION_WINDOW_MS
   });
 });
 
@@ -151,16 +226,6 @@ app.get('/api/health', (_req, res) => {
 app.post('/api/generate', (req, res) => {
   const now = Date.now();
   const ip = req.ip || req.socket.remoteAddress || 'unknown';
-
-  const recent = (generationRequests.get(ip) || [])
-    .filter(timestamp => now - timestamp < GENERATION_WINDOW_MS);
-
-  if (recent.length >= GENERATION_LIMIT) {
-    generationRequests.set(ip, recent);
-    return res.status(429).json({
-      error: 'Generation limit reached for this hour. Please wait before trying again.'
-    });
-  }
 
   if (!providerReady()) {
     return res.status(503).json({
@@ -182,10 +247,18 @@ app.post('/api/generate', (req, res) => {
     ? req.body.aspect_ratio
     : '16:9';
 
-  recent.push(now);
-  generationRequests.set(ip, recent);
-
   const jobId = `sf_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+
+  // Reserve a slot before accepting the request.
+  const reservation = reserveQuota(ip, jobId);
+
+  if (!reservation) {
+    return res.status(429).json({
+      error: 'Generation limit reached for this hour. Please wait before trying again.',
+      limit: GENERATION_LIMIT,
+      windowMs: GENERATION_WINDOW_MS
+    });
+  }
 
   const job = {
     jobId,
@@ -196,12 +269,14 @@ app.post('/api/generate', (req, res) => {
     status: 'queued',
     retryCount: 0,
     createdAt: now,
-    updatedAt: now
+    updatedAt: now,
+    ip,
+    reservation
   };
 
   jobs.set(jobId, job);
 
-  // Respond immediately; provider retries run in the background.
+  // Respond immediately. Provider submission runs in the background.
   res.json({
     jobId,
     status: 'queued',
@@ -212,6 +287,9 @@ app.post('/api/generate', (req, res) => {
     job.status = 'failed';
     job.error = error.message || 'Unexpected backend error.';
     job.updatedAt = Date.now();
+
+    // Safety release if an unexpected error occurs.
+    releaseQuota(ip, reservation);
   });
 });
 
@@ -290,7 +368,7 @@ app.get('/api/jobs/:jobId', async (req, res) => {
   }
 });
 
-// Start Express server
+// Start server
 const PORT = process.env.PORT || 3000;
 
 if (require.main === module) {
@@ -299,4 +377,8 @@ if (require.main === module) {
   });
 }
 
-module.exports = { app, jobs };
+module.exports = {
+  app,
+  jobs,
+  generationRequests
+};
