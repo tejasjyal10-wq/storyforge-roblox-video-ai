@@ -262,7 +262,11 @@ class StoryForgeOrchestrator {
           workflow.tasks.find(item => item.id === id)
         );
 
-        if (dependencies.some(dep => dep.status === 'failed')) {
+        if (
+  dependencies.some(
+    dep => dep.status === 'failed' || dep.status === 'skipped'
+  )
+) {
           task.status = 'skipped';
           task.error = 'A dependency failed.';
           task.completedAt = new Date().toISOString();
@@ -290,7 +294,7 @@ class StoryForgeOrchestrator {
         task.status = 'running';
 
         const promise = this.executeTask(workflow, task)
-          .finally(() => running.delete(task.id));
+          .finally(() => running.delete(promise));
 
         running.add(task.id);
       }
