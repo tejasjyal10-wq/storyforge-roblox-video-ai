@@ -14,7 +14,7 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
-const { createStoryDirectorRouter } = require('./agents/story-director/storyforge-story-director');
+const { createStoryDirectorRouter } = require('./agents/story-director/storyforge-story-director.js');
 // Learning API
 const { createLearningRouter } = require('./storyforge-learning');
 app.use('/api/learning', createLearningRouter());
