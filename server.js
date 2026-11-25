@@ -14,10 +14,11 @@ app.use((req, res, next) => {
   if (req.method === 'OPTIONS') return res.sendStatus(204);
   next();
 });
-
+const { createStoryDirectorRouter } = require('./agents/story-director/storyforge-story-director');
 // Learning API
 const { createLearningRouter } = require('./storyforge-learning');
 app.use('/api/learning', createLearningRouter());
+app.use('/api/agents/story-director', createStoryDirectorRouter());
 
 // Static website
 app.use(express.static(path.join(__dirname, 'public')));
