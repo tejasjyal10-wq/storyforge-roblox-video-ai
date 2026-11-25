@@ -34,6 +34,69 @@ const KEY = process.env.AGNES_API_KEY;
 
 // Job storage
 const jobs = new Map();
+// StoryForge background job monitor
+const BACKGROUND_POLL_INTERVAL = 15000; // 15 seconds
+const activePolls = new Set();
+
+async function monitorJob(job) {
+  if (!job.videoId || activePolls.has(job.jobId)) return;
+
+  if (['completed', 'failed'].includes(job.status)) return;
+
+  activePolls.add(job.jobId);
+
+  try {
+    const params = new URLSearchParams({
+      video_id: job.videoId,
+      model_name: job.model
+    });
+
+    const data = await apiFetch(`${BASE}/agnesapi?${params}`);
+
+    const status = String(data.status || '').toLowerCase();
+
+    const url =
+      data.url ||
+      data.video_url ||
+      data.output?.url ||
+      data.result?.url;
+
+    if (
+      ['completed', 'complete', 'success', 'succeeded', 'done'].includes(status) &&
+      url
+    ) {
+      job.status = 'completed';
+      job.videoUrl = url;
+      job.providerData = data;
+    } else if (['failed', 'error', 'cancelled'].includes(status)) {
+      job.status = 'failed';
+      job.error = data.error || data.message || 'Video generation failed';
+      job.providerData = data;
+    } else {
+      job.status = 'processing';
+      job.progress = Number(data.progress) || 0;
+    }
+
+    job.updatedAt = Date.now();
+
+  } catch (error) {
+    // A temporary monitoring error should not cancel the video.
+    job.monitorError = error.message;
+    job.updatedAt = Date.now();
+  } finally {
+    activePolls.delete(job.jobId);
+  }
+}
+
+function startBackgroundMonitor() {
+  setInterval(() => {
+    for (const job of jobs.values()) {
+      if (job.videoId && !['completed', 'failed'].includes(job.status)) {
+        monitorJob(job);
+      }
+    }
+  }, BACKGROUND_POLL_INTERVAL);
+}
 const generationRequests = new Map();
 
 // Configurable quota
@@ -368,6 +431,9 @@ app.get('/api/jobs/:jobId', async (req, res) => {
     });
   }
 });
+
+// Start background job monitoring
+startBackgroundMonitor();
 
 // Start server
 const PORT = process.env.PORT || 3000;
