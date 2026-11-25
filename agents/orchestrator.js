@@ -296,7 +296,7 @@ class StoryForgeOrchestrator {
         const promise = this.executeTask(workflow, task)
           .finally(() => running.delete(promise));
 
-        running.add(task.id);
+        running.add(promise);
       }
 
       if (running.size > 0) {
