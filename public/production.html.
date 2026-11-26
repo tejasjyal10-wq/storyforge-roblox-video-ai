@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryForge | Production</title>
+  <link rel="stylesheet" href="/production.css">
+</head>
+<body>
+
+<div class="production-background"></div>
+
+<header class="production-header">
+  <a href="/" class="production-logo">
+    <span class="logo-symbol">✦</span>
+    <span>STORYFORGE</span>
+  </a>
+
+  <div class="production-header-right">
+    <span class="production-status-badge">
+      <span class="status-dot"></span>
+      PRODUCTION WORKSPACE
+    </span>
+    <a href="/studio.html" class="back-link">← STUDIO</a>
+  </div>
+</header>
+
+<main class="production-container">
+
+  <!-- PAGE INTRO -->
+
+  <section class="production-intro">
+    <div class="production-eyebrow">YOUR STORY WORKSPACE</div>
+    <h1>STORY <span>PRODUCTION</span></h1>
+    <p>Your story configuration, cinematic direction and production workspace.</p>
+  </section>
+
+  <!-- PRODUCTION STATUS -->
+
+  <section class="production-status-card">
+    <div class="production-status-icon">✦</div>
+
+    <div class="production-status-content">
+      <span class="production-label">CURRENT STATUS</span>
+      <h2 id="productionStatusTitle">Configuration Received</h2>
+      <p id="productionStatusDescription">
+        Your story settings have been transferred from Studio.
+      </p>
+    </div>
+
+    <span class="status-pill" id="productionStatusBadge">
+      CONFIGURED
+    </span>
+  </section>
+
+  <!-- STORY OVERVIEW -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">01</span>
+      <div>
+        <h2>Story Overview</h2>
+        <p>Your original story concept and selected genres.</p>
+      </div>
+    </div>
+
+    <div class="story-overview-content">
+
+      <div class="story-description-box">
+        <span class="production-label">YOUR STORY CONCEPT</span>
+        <p id="productionStoryIdea">
+          Your story concept will appear here.
+        </p>
+      </div>
+
+      <div class="genre-display">
+        <span class="production-label">STORY GENRES</span>
+        <div class="genre-tags" id="productionGenres">
+          <span class="genre-tag">Adventure</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CINEMATIC SETTINGS -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">02</span>
+      <div>
+        <h2>Cinematic Direction</h2>
+        <p>Visual and cinematic settings for your project.</p>
+      </div>
+    </div>
+
+    <div class="production-settings-grid">
+
+      <div class="production-setting">
+        <span class="production-label">VISUAL STYLE</span>
+        <strong id="productionVisualStyle">Roblox Cinematic</strong>
+      </div>
+
+      <div class="production-setting">
+        <span class="production-label">VIDEO DURATION</span>
+        <strong id="productionDuration">1 Minute</strong>
+      </div>
+
+      <div class="production-setting">
+        <span class="production-label">QUALITY</span>
+        <strong id="productionQuality">High</strong>
+      </div>
+
+      <div class="production-setting">
+        <span class="production-label">CAMERA DIRECTOR</span>
+        <strong>Dynamic Scene-Based Camera</strong>
+      </div>
+
+    </div>
+
+    <div class="camera-director-note">
+      <span class="camera-note-icon">🎬</span>
+      <p>
+        Camera angles, framing, movements, close-ups, tracking shots and
+        transitions are intended to adapt naturally to each scene.
+      </p>
+    </div>
+  </section>
+
+  <!-- CHARACTERS -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">03</span>
+      <div>
+        <h2>Character Direction</h2>
+        <p>Character creation and casting configuration.</p>
+      </div>
+    </div>
+
+    <div class="character-production-box">
+      <div class="character-production-icon">👥</div>
+
+      <div>
+        <span class="production-label">CASTING MODE</span>
+        <h3 id="productionCharacterMode">Character Library</h3>
+        <p id="productionCharacterDescription">
+          Your character settings will appear here.
+        </p>
+      </div>
+    </div>
+
+    <a href="/characters.html" class="production-text-link">
+      VIEW CHARACTER LIBRARY ↗
+    </a>
+  </section>
+
+  <!-- AUDIO -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">04</span>
+      <div>
+        <h2>Audio Production</h2>
+        <p>Your selected audio elements.</p>
+      </div>
+    </div>
+
+    <div class="audio-production-grid">
+
+      <div class="audio-production-item" id="audioMusic">
+        <span class="audio-icon">♫</span>
+        <div>
+          <strong>Background Music</strong>
+          <span class="audio-state">Not configured</span>
+        </div>
+      </div>
+
+      <div class="audio-production-item" id="audioEffects">
+        <span class="audio-icon">🔊</span>
+        <div>
+          <strong>Sound Effects</strong>
+          <span class="audio-state">Not configured</span>
+        </div>
+      </div>
+
+      <div class="audio-production-item" id="audioNarration">
+        <span class="audio-icon">🎙</span>
+        <div>
+          <strong>Voice Narration</strong>
+          <span class="audio-state">Not configured</span>
+        </div>
+      </div>
+
+      <div class="audio-production-item" id="audioDialogue">
+        <span class="audio-icon">💬</span>
+        <div>
+          <strong>Character Dialogue</strong>
+          <span class="audio-state">Not configured</span>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- SCENE PLAN -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">05</span>
+      <div>
+        <h2>Scene Planning</h2>
+        <p>Story breakdown and cinematic sequence workspace.</p>
+      </div>
+    </div>
+
+    <div class="scene-planning-placeholder" id="scenePlanning">
+      <div class="scene-placeholder-icon">🎞</div>
+      <h3>Scene Plan Awaiting Generation</h3>
+      <p>
+        Your story concept and production settings are ready.
+        The scene director will use them to structure the story into
+        connected scenes when story generation is integrated.
+      </p>
+    </div>
+  </section>
+
+  <!-- VIDEO PREVIEW -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">06</span>
+      <div>
+        <h2>Video Preview</h2>
+        <p>Your cinematic preview workspace.</p>
+      </div>
+    </div>
+
+    <div class="video-preview-container">
+      <div class="video-preview-content">
+        <div class="video-preview-symbol">▶</div>
+        <h3>Video Preview</h3>
+        <p id="videoPreviewDescription">
+          Your video preview will appear here after video generation
+          has been connected.
+        </p>
+        <span class="video-preview-status">AWAITING VIDEO GENERATION</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRODUCTION PIPELINE -->
+
+  <section class="production-card">
+    <div class="production-card-heading">
+      <span class="production-step">07</span>
+      <div>
+        <h2>Production Pipeline</h2>
+        <p>Track the stages of your cinematic project.</p>
+      </div>
+    </div>
+
+    <div class="pipeline-list">
+
+      <div class="pipeline-item pipeline-ready">
+        <span class="pipeline-indicator">✓</span>
+        <div>
+          <strong>Studio Configuration</strong>
+          <p>Your story settings have been received.</p>
+        </div>
+        <span class="pipeline-state">READY</span>
+      </div>
+
+      <div class="pipeline-item">
+        <span class="pipeline-indicator">02</span>
+        <div>
+          <strong>Story & Scene Generation</strong>
+          <p>Story director and scene planning integration.</p>
+        </div>
+        <span class="pipeline-state">PENDING</span>
+      </div>
+
+      <div class="pipeline-item">
+        <span class="pipeline-indicator">03</span>
+        <div>
+          <strong>Character & World Preparation</strong>
+          <p>Characters, environments and scene continuity.</p>
+        </div>
+        <span class="pipeline-state">PENDING</span>
+      </div>
+
+      <div class="pipeline-item">
+        <span class="pipeline-indicator">04</span>
+        <div>
+          <strong>Animation & Audio</strong>
+          <p>Motion, camera direction, dialogue and audio.</p>
+        </div>
+        <span class="pipeline-state">PENDING</span>
+      </div>
+
+      <div class="pipeline-item">
+        <span class="pipeline-indicator">05</span>
+        <div>
+          <strong>Video Rendering</strong>
+          <p>Final cinematic assembly and rendering.</p>
+        </div>
+        <span class="pipeline-state">PENDING</span>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PROJECT ACTIONS -->
+
+  <section class="production-actions">
+
+    <a href="/studio.html" class="production-secondary-button">
+      ← EDIT STORY SETTINGS
+    </a>
+
+    <button type="button" class="production-primary-button" id="downloadConfigBtn">
+      EXPORT CONFIGURATION ↓
+    </button>
+
+  </section>
+
+  <p class="production-footer-note">
+    StoryForge Cinematic Workspace · Your imagination, your story.
+  </p>
+
+</main>
+
+<script src="/production.js"></script>
+</body>
+</html>
