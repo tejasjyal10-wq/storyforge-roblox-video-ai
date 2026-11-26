@@ -27,12 +27,12 @@ async function runTests() {
 
   // Test 5: Story Director produces an output
   if (!job.outputs.storyDirector) {
-  console.error('JOB STATUS:', job.status);
-  console.error('STAGES:', JSON.stringify(job.stages, null, 2));
-  console.error('ERRORS:', JSON.stringify(job.errors, null, 2));
-}
+    console.error('JOB STATUS:', job.status);
+    console.error('STAGES:', JSON.stringify(job.stages, null, 2));
+    console.error('ERRORS:', JSON.stringify(job.errors, null, 2));
+  }
 
-assert.ok(job.outputs.storyDirector);
+  assert.ok(job.outputs.storyDirector);
 
   // Test 6: Story concept contains a title
   assert.ok(job.outputs.storyDirector.concept.title);
