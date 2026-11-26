@@ -1,650 +1,1066 @@
-
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
-  // =========================================================
-  // STORYFORGE PRODUCTION STUDIO
-  // =========================================================
-
   const CONFIG_STORAGE_KEY = 'storyforge_config';
   const LEGACY_SCENE_KEY = 'storyforge_production_scenes';
   const PROJECT_SCENE_PREFIX = 'storyforge_production_scenes_';
 
-  let currentProjectId = 'default_project';
   let projectConfig = null;
+  let currentProjectId = 'default_project';
   let scenes = [];
   let selectedSceneId = null;
+  let currentView = 'overview';
 
-  // =========================================================
-  // ELEMENTS
-  // =========================================================
+  const $ = (id) => document.getElementById(id);
 
-  const sceneList = document.getElementById('sceneList');
-  const sceneCount = document.getElementById('sceneEditorCount');
-  const sceneTimeline = document.getElementById('sceneTimeline');
+  const editorForm = $('sceneEditorForm');
+  const sceneList = $('sceneList');
+  const sceneTimeline = $('sceneTimeline');
 
-  const addSceneBtn = document.getElementById('addSceneBtn');
-  const emptyPanel = document.getElementById('sceneDetailEmpty');
-  const editorForm = document.getElementById('sceneEditorForm');
-
-  const saveSceneBtn = document.getElementById('saveSceneBtn');
-  const deleteSceneBtn = document.getElementById('deleteSceneBtn');
-
-  const fields = {
-    title: document.getElementById('sceneTitleInput'),
-    description: document.getElementById('sceneDescriptionInput'),
-    location: document.getElementById('sceneLocationInput'),
-    characters: document.getElementById('sceneCharactersInput'),
-    action: document.getElementById('sceneActionInput'),
-    dialogue: document.getElementById('sceneDialogueInput'),
-    duration: document.getElementById('sceneDurationInput'),
-    camera: document.getElementById('sceneCameraInput'),
-    animation: document.getElementById('sceneAnimationInput'),
-    notes: document.getElementById('sceneNotesInput')
+  const editorFields = {
+    title: $('sceneTitleInput'),
+    description: $('sceneDescriptionInput'),
+    location: $('sceneLocationInput'),
+    characters: $('sceneCharactersInput'),
+    action: $('sceneActionInput'),
+    dialogue: $('sceneDialogueInput'),
+    duration: $('sceneDurationInput'),
+    camera: $('sceneCameraInput'),
+    animation: $('sceneAnimationInput'),
+    notes: $('sceneNotesInput')
   };
 
-  // =========================================================
-  // PROJECT STORAGE
-  // =========================================================
+  function safeParse(value, fallback = null) {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  }
 
-  const getProjectSceneKey = () => {
+  function escapeText(value) {
+    return String(value ?? '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function getProjectName() {
+    return projectConfig?.projectName ||
+      projectConfig?.title ||
+      projectConfig?.name ||
+      'My Story Project';
+  }
+
+  function getStoryIdea() {
+    return projectConfig?.storyIdea ||
+      projectConfig?.story ||
+      projectConfig?.idea ||
+      projectConfig?.description ||
+      '';
+  }
+
+  function getGenres() {
+    const genres = projectConfig?.genres ||
+      projectConfig?.genre ||
+      [];
+
+    if (Array.isArray(genres)) {
+      return genres;
+    }
+
+    if (typeof genres === 'string') {
+      return genres
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function getVisualStyle() {
+    return projectConfig?.visualStyle ||
+      projectConfig?.style ||
+      'Roblox Cinematic';
+  }
+
+  function getQuality() {
+    return projectConfig?.quality ||
+      projectConfig?.videoQuality ||
+      'Standard';
+  }
+
+  function getTargetDuration() {
+    return Number(
+      projectConfig?.duration ||
+      projectConfig?.videoDuration ||
+      projectConfig?.targetDuration ||
+      60
+    );
+  }
+
+  function getCharacterMode() {
+    return projectConfig?.characterMode ||
+      projectConfig?.charactersMode ||
+      'library';
+  }
+
+  function formatDuration(seconds) {
+    seconds = Math.max(0, Number(seconds) || 0);
+
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.round(seconds % 60);
+
+    if (minutes === 0) {
+      return `${remainingSeconds} sec`;
+    }
+
+    if (remainingSeconds === 0) {
+      return `${minutes} min`;
+    }
+
+    return `${minutes} min ${remainingSeconds} sec`;
+  }
+
+  function getTotalSceneDuration() {
+    return scenes.reduce((total, scene) => {
+      return total + (Number(scene.duration) || 0);
+    }, 0);
+  }
+
+  function getProjectSceneStorageKey() {
     return PROJECT_SCENE_PREFIX + currentProjectId;
-  };
+  }
 
-  const createId = () => {
-    return 'scene_' + Date.now() + '_' +
-      Math.random().toString(36).slice(2, 8);
-  };
+  // -----------------------------------------
+  // CONFIGURATION
+  // -----------------------------------------
 
-  const getScene = id => scenes.find(scene => scene.id === id);
+  function loadConfiguration() {
+    const savedConfig = sessionStorage.getItem(CONFIG_STORAGE_KEY);
 
-  const getSceneNumber = id =>
-    scenes.findIndex(scene => scene.id === id) + 1;
+    projectConfig = savedConfig
+      ? safeParse(savedConfig, null)
+      : null;
 
-  const loadConfiguration = () => {
-    try {
-      const saved = sessionStorage.getItem(CONFIG_STORAGE_KEY);
+    if (projectConfig) {
+      currentProjectId =
+        projectConfig.id ||
+        projectConfig.projectId ||
+        'default_project';
+    }
+  }
 
-      projectConfig = saved ? JSON.parse(saved) : null;
-
-      if (projectConfig && projectConfig.id) {
-        currentProjectId = String(projectConfig.id);
-      }
-    } catch (error) {
-      projectConfig = null;
-      console.error('Could not load project configuration:', error);
+  function renderConfiguration() {
+    if (!projectConfig) {
+      return;
     }
 
-    renderConfiguration();
-  };
+    const projectName = getProjectName();
+    const storyIdea = getStoryIdea();
+    const genres = getGenres();
+    const visualStyle = getVisualStyle();
+    const quality = getQuality();
+    const targetDuration = getTargetDuration();
+    const characterMode = getCharacterMode();
 
-  const loadScenes = () => {
-    try {
-      const projectKey = getProjectSceneKey();
-      const projectSaved = localStorage.getItem(projectKey);
+    // Project name
+    const projectNameElements = document.querySelectorAll(
+      '.sidebar-project .project-name, #projectName, #productionProjectName'
+    );
 
-      if (projectSaved !== null) {
-        scenes = JSON.parse(projectSaved);
+    projectNameElements.forEach(element => {
+      element.textContent = projectName;
+    });
+
+    // Story description
+    const storyElement = $('productionStoryIdea');
+
+    if (storyElement) {
+      storyElement.textContent = storyIdea || 'No story idea provided.';
+    }
+
+    // Genre tags
+    const genreContainer = $('productionGenres');
+
+    if (genreContainer) {
+      genreContainer.replaceChildren();
+
+      genres.forEach(genre => {
+        const tag = document.createElement('span');
+        tag.className = 'genre-tag';
+        tag.textContent = genre;
+        genreContainer.appendChild(tag);
+      });
+
+      if (genres.length === 0) {
+        genreContainer.textContent = 'No genres selected';
+      }
+    }
+
+    // Visual style
+    const visualStyleElements = [
+      $('productionVisualStyle'),
+      $('overviewVisualStyle')
+    ];
+
+    visualStyleElements.forEach(element => {
+      if (element) {
+        element.textContent = visualStyle;
+      }
+    });
+
+    // Quality
+    const qualityElement = $('productionQuality');
+
+    if (qualityElement) {
+      qualityElement.textContent = quality;
+    }
+
+    // Target duration
+    const durationElement = $('productionDuration');
+
+    if (durationElement) {
+      durationElement.textContent = formatDuration(targetDuration);
+    }
+
+    // Character mode
+    const characterModeLabel = getCharacterModeLabel(characterMode);
+
+    const characterModeElements = [
+      $('productionCharacterMode'),
+      $('characterWorkspaceMode')
+    ];
+
+    characterModeElements.forEach(element => {
+      if (element) {
+        element.textContent = characterModeLabel;
+      }
+    });
+
+    const characterDescription = $('productionCharacterDescription');
+
+    if (characterDescription) {
+      characterDescription.textContent =
+        getCharacterModeDescription(characterMode);
+    }
+
+    // Story preview description
+    const previewDescription = $('videoPreviewDescription');
+
+    if (previewDescription) {
+      if (scenes.length === 0) {
+        previewDescription.textContent =
+          'Your story is configured. Add scenes to begin preparing your video.';
       } else {
-        // Migrate scenes from the previous shared storage key.
-        const legacySaved = localStorage.getItem(LEGACY_SCENE_KEY);
-
-        if (legacySaved !== null) {
-          scenes = JSON.parse(legacySaved);
-
-          if (!Array.isArray(scenes)) {
-            scenes = [];
-          }
-
-          localStorage.setItem(projectKey, JSON.stringify(scenes));
-        } else {
-          scenes = [];
-        }
+        previewDescription.textContent =
+          `${scenes.length} scene(s) planned. ` +
+          'Video generation will be available when the rendering system is connected.';
       }
-
-      if (!Array.isArray(scenes)) {
-        scenes = [];
-      }
-    } catch (error) {
-      scenes = [];
-      console.error('Could not load scenes:', error);
     }
-  };
 
-  const persistScenes = () => {
+    // Optional project JSON display
+    const configDisplay = $('productionConfig');
+
+    if (configDisplay) {
+      configDisplay.textContent = JSON.stringify(
+        projectConfig,
+        null,
+        2
+      );
+    }
+  }
+
+  function getCharacterModeLabel(mode) {
+    const normalized = String(mode).toLowerCase();
+
+    if (normalized === 'library') {
+      return 'Character Library';
+    }
+
+    if (normalized === 'create') {
+      return 'Create Characters';
+    }
+
+    if (normalized === 'custom') {
+      return 'Custom Characters';
+    }
+
+    return mode || 'Character Library';
+  }
+
+  function getCharacterModeDescription(mode) {
+    const normalized = String(mode).toLowerCase();
+
+    if (normalized === 'library') {
+      return 'Use saved characters from your Character Library.';
+    }
+
+    if (normalized === 'create') {
+      return 'Create characters for your story.';
+    }
+
+    if (normalized === 'custom') {
+      return 'Use your own custom character setup.';
+    }
+
+    return 'Your selected character workflow.';
+  }
+
+  // -----------------------------------------
+  // SCENE STORAGE
+  // -----------------------------------------
+
+  function loadScenes() {
+    let storedScenes = localStorage.getItem(
+      getProjectSceneStorageKey()
+    );
+
+    // Migrate old single-project scene storage
+    if (!storedScenes) {
+      const legacyScenes = localStorage.getItem(LEGACY_SCENE_KEY);
+
+      if (legacyScenes) {
+        storedScenes = legacyScenes;
+
+        localStorage.setItem(
+          getProjectSceneStorageKey(),
+          legacyScenes
+        );
+      }
+    }
+
+    const parsedScenes = safeParse(storedScenes, []);
+
+    scenes = Array.isArray(parsedScenes)
+      ? parsedScenes
+      : [];
+
+    scenes = scenes.map((scene, index) => ({
+      ...scene,
+      id: scene.id || `scene_${Date.now()}_${index}`,
+      projectId: currentProjectId,
+      order: Number.isFinite(Number(scene.order))
+        ? Number(scene.order)
+        : index
+    }));
+
+    scenes.sort((a, b) => a.order - b.order);
+  }
+
+  function persistScenes() {
     try {
+      scenes.forEach((scene, index) => {
+        scene.order = index;
+        scene.projectId = currentProjectId;
+      });
+
       localStorage.setItem(
-        getProjectSceneKey(),
+        getProjectSceneStorageKey(),
         JSON.stringify(scenes)
       );
 
       return true;
     } catch (error) {
-      console.error('Could not save scenes:', error);
-      alert('Scenes could not be saved in this browser.');
+      console.error('Unable to save scenes:', error);
+
+      alert(
+        'Unable to save scenes. Your browser storage may be full.'
+      );
+
       return false;
     }
-  };
+  }
 
-  // =========================================================
-  // CONFIGURATION DISPLAY
-  // =========================================================
+  // -----------------------------------------
+  // DASHBOARD
+  // -----------------------------------------
 
-  const renderConfiguration = () => {
-    const configDisplay = document.getElementById('productionConfig');
+  function updateDashboard() {
+    const sceneCount = scenes.length;
+    const totalDuration = getTotalSceneDuration();
 
-    if (configDisplay) {
-      configDisplay.textContent = projectConfig
-        ? JSON.stringify(projectConfig, null, 2)
-        : 'No project configuration loaded.';
+    // Scene count
+    const sceneCountElement = $('sceneCount');
+
+    if (sceneCountElement) {
+      sceneCountElement.textContent =
+        `${sceneCount} ${sceneCount === 1 ? 'Scene' : 'Scenes'}`;
     }
 
-    const storyIdea = document.getElementById('productionStoryIdea');
+    const sceneEditorCount = $('sceneEditorCount');
 
-    if (storyIdea) {
-      storyIdea.textContent =
-        projectConfig?.storyIdea ||
-        projectConfig?.idea ||
-        projectConfig?.prompt ||
-        'No story idea saved.';
+    if (sceneEditorCount) {
+      sceneEditorCount.textContent =
+        `${sceneCount} scene(s) in your story`;
     }
 
-    const genreDisplay = document.getElementById('productionGenres');
+    // Optional total scene duration
+    const totalDurationElement = $('totalSceneDuration');
 
-    if (genreDisplay) {
-      const genres = projectConfig?.genres ||
-        projectConfig?.genre ||
-        [];
-
-      genreDisplay.textContent = Array.isArray(genres)
-        ? genres.join(', ')
-        : String(genres || 'Not specified');
+    if (totalDurationElement) {
+      totalDurationElement.textContent =
+        formatDuration(totalDuration);
     }
 
-    const projectName = document.getElementById('productionProjectName');
+    // Project status
+    const statusTitle = $('productionStatusTitle');
 
-    if (projectName) {
-      projectName.textContent =
-        projectConfig?.storyIdea
-          ? projectConfig.storyIdea.substring(0, 60)
-          : 'Untitled Story';
+    let statusText = 'Draft';
+
+    if (projectConfig) {
+      statusText = sceneCount > 0
+        ? 'Scenes Planned'
+        : 'Configured';
     }
 
-    const visualStyle = document.getElementById('productionVisualStyle');
-
-    if (visualStyle) {
-      visualStyle.textContent =
-        projectConfig?.visualStyle || 'Not specified';
+    if (statusTitle) {
+      statusTitle.textContent = statusText;
     }
 
-    const qualityDisplay = document.getElementById('productionQuality');
+    const sidebarStatus = document.querySelector(
+      '.sidebar-project .project-status'
+    );
 
-    if (qualityDisplay) {
-      qualityDisplay.textContent =
-        projectConfig?.quality || 'Not specified';
+    if (sidebarStatus) {
+      sidebarStatus.textContent = statusText;
     }
 
-    const durationDisplay = document.getElementById('productionDuration');
+    // Audio settings
+    updateAudioStatus();
 
-    if (durationDisplay) {
-      durationDisplay.textContent =
-        projectConfig?.duration
-          ? projectConfig.duration + ' seconds'
-          : 'Not specified';
+    // Video preview status
+    const previewDescription = $('videoPreviewDescription');
+
+    if (previewDescription) {
+      if (sceneCount === 0) {
+        previewDescription.textContent =
+          'Your story is configured. Add scenes to begin preparing your preview.';
+      } else {
+        previewDescription.textContent =
+          `${sceneCount} scene(s) planned. ` +
+          'The preview is not rendered yet.';
+      }
     }
-  };
+  }
 
-  // =========================================================
-  // HELPERS
-  // =========================================================
+  function updateAudioStatus() {
+    const audioConfig = projectConfig?.audio || {};
 
-  const escapeText = value => {
-    const div = document.createElement('div');
-    div.textContent = String(value ?? '');
-    return div.innerHTML;
-  };
+    const audioItems = [
+      {
+        id: 'audioMusic',
+        keys: ['music', 'backgroundMusic']
+      },
+      {
+        id: 'audioEffects',
+        keys: ['effects', 'soundEffects']
+      },
+      {
+        id: 'audioNarration',
+        keys: ['narration', 'voiceover']
+      },
+      {
+        id: 'audioDialogue',
+        keys: ['dialogue', 'characterDialogue']
+      }
+    ];
 
-  const getFieldValue = field =>
-    field ? field.value.trim() : '';
+    audioItems.forEach(item => {
+      const element = $(item.id);
 
-  const setFieldValue = (field, value) => {
-    if (field) field.value = value ?? '';
-  };
-
-  const updateSceneCount = () => {
-    if (sceneCount) {
-      sceneCount.textContent = scenes.length;
-    }
-
-    const overviewCount = document.getElementById('sceneCount');
-
-    if (overviewCount) {
-      overviewCount.textContent = scenes.length;
-    }
-
-    const totalDuration = scenes.reduce((total, scene) => {
-      const duration = Number(scene.duration);
-      return total + (Number.isFinite(duration) ? duration : 0);
-    }, 0);
-
-    const durationDisplay = document.getElementById('totalSceneDuration');
-
-    if (durationDisplay) {
-      durationDisplay.textContent = totalDuration + ' sec';
-    }
-  };
-
-  // =========================================================
-  // EDITOR
-  // =========================================================
-
-  const clearEditor = () => {
-    Object.values(fields).forEach(field => {
-      setFieldValue(field, '');
-    });
-
-    if (emptyPanel) {
-      emptyPanel.hidden = false;
-    }
-
-    if (editorForm) {
-      editorForm.hidden = true;
-    }
-  };
-
-  const openEditor = scene => {
-    if (!scene) {
-      clearEditor();
-      return;
-    }
-
-    selectedSceneId = scene.id;
-
-    if (emptyPanel) {
-      emptyPanel.hidden = true;
-    }
-
-    if (editorForm) {
-      editorForm.hidden = false;
-    }
-
-    setFieldValue(fields.title, scene.title);
-    setFieldValue(fields.description, scene.description);
-    setFieldValue(fields.location, scene.location);
-    setFieldValue(fields.characters, scene.characters);
-    setFieldValue(fields.action, scene.action);
-    setFieldValue(fields.dialogue, scene.dialogue);
-    setFieldValue(fields.duration, scene.duration);
-    setFieldValue(fields.camera, scene.camera);
-    setFieldValue(fields.animation, scene.animation);
-    setFieldValue(fields.notes, scene.notes);
-
-    renderSceneList();
-  };
-
-  const collectEditorData = () => ({
-    title: getFieldValue(fields.title),
-    description: getFieldValue(fields.description),
-    location: getFieldValue(fields.location),
-    characters: getFieldValue(fields.characters),
-    action: getFieldValue(fields.action),
-    dialogue: getFieldValue(fields.dialogue),
-    duration: getFieldValue(fields.duration),
-    camera: getFieldValue(fields.camera),
-    animation: getFieldValue(fields.animation),
-    notes: getFieldValue(fields.notes)
-  });
-
-  // =========================================================
-  // SCENE LIST
-  // =========================================================
-
-  const renderSceneList = () => {
-    if (!sceneList) return;
-
-    sceneList.innerHTML = '';
-
-    if (scenes.length === 0) {
-      sceneList.innerHTML =
-        '<div class="scene-list-empty">No scenes yet. Create your first scene.</div>';
-      return;
-    }
-
-    scenes.forEach((scene, index) => {
-      const card = document.createElement('div');
-
-      card.className = 'scene-list-item';
-
-      if (scene.id === selectedSceneId) {
-        card.classList.add('active');
+      if (!element) {
+        return;
       }
 
-      const title = scene.title || 'Untitled Scene ' + (index + 1);
+      let enabled = false;
 
-      card.innerHTML = `
-        <div class="scene-card-content">
-          <button type="button"
-            class="scene-select-btn"
-            data-scene-select="${escapeText(scene.id)}">
-            <span class="scene-card-number">SCENE ${index + 1}</span>
-            <span class="scene-card-title">${escapeText(title)}</span>
-            <span class="scene-card-duration">
-              ${escapeText(scene.duration || '0')} sec
-            </span>
-          </button>
+      for (const key of item.keys) {
+        if (typeof audioConfig[key] === 'boolean') {
+          enabled = audioConfig[key];
+          break;
+        }
+      }
 
-          <div class="scene-order-controls">
-            <button type="button"
-              data-scene-up="${escapeText(scene.id)}"
-              aria-label="Move scene up"
-              ${index === 0 ? 'disabled' : ''}>↑</button>
+      const statusElement = element.querySelector('.audio-state');
 
-            <button type="button"
-              data-scene-down="${escapeText(scene.id)}"
-              aria-label="Move scene down"
-              ${index === scenes.length - 1 ? 'disabled' : ''}>↓</button>
-          </div>
-        </div>
-      `;
+      if (statusElement) {
+        statusElement.textContent = enabled
+          ? 'Enabled'
+          : 'Disabled';
 
-      sceneList.appendChild(card);
+        statusElement.classList.toggle('enabled', enabled);
+        statusElement.classList.toggle('disabled', !enabled);
+      }
     });
-  };
+  }
 
-  // =========================================================
-  // TIMELINE
-  // =========================================================
+  // -----------------------------------------
+  // SCENE LIST
+  // -----------------------------------------
 
-  const renderTimeline = () => {
-    if (!sceneTimeline) return;
+  function renderSceneList() {
+    if (!sceneList) {
+      return;
+    }
 
-    sceneTimeline.innerHTML = '';
+    sceneList.replaceChildren();
 
     if (scenes.length === 0) {
-      sceneTimeline.innerHTML =
-        '<div class="timeline-empty">Your scene timeline will appear here.</div>';
+      const emptyMessage = document.createElement('div');
+
+      emptyMessage.className = 'scene-empty-message';
+      emptyMessage.textContent =
+        'No scenes yet. Add your first scene to start building your story.';
+
+      sceneList.appendChild(emptyMessage);
       return;
     }
 
     scenes.forEach((scene, index) => {
       const item = document.createElement('div');
 
-      item.className = 'scene-timeline-item';
+      item.className = 'scene-list-item';
 
-      item.innerHTML = `
-        <div class="timeline-scene-number">SCENE ${index + 1}</div>
-        <div class="timeline-scene-title">
-          ${escapeText(scene.title || 'Untitled Scene')}
-        </div>
-        <div class="timeline-scene-time">
-          ${escapeText(scene.duration || '0')} sec
-        </div>
-      `;
+      if (scene.id === selectedSceneId) {
+        item.classList.add('active');
+      }
+
+      item.dataset.sceneId = scene.id;
+
+      const sceneButton = document.createElement('button');
+
+      sceneButton.type = 'button';
+      sceneButton.className = 'scene-select-button';
+      sceneButton.dataset.sceneId = scene.id;
+
+      const title = document.createElement('span');
+
+      title.className = 'scene-list-title';
+      title.textContent = scene.title || `Scene ${index + 1}`;
+
+      const subtitle = document.createElement('span');
+
+      subtitle.className = 'scene-list-subtitle';
+        subtitle.textContent =
+        `${formatDuration(scene.duration)} · ` +
+        `${scene.location || 'Location not set'}`;
+
+      sceneButton.appendChild(title);
+      sceneButton.appendChild(subtitle);
+
+      const controls = document.createElement('div');
+
+      controls.className = 'scene-order-controls';
+
+      const upButton = createOrderButton(
+        '↑',
+        'Move scene up',
+        index === 0,
+        scene.id,
+        'up'
+      );
+
+      const downButton = createOrderButton(
+        '↓',
+        'Move scene down',
+        index === scenes.length - 1,
+        scene.id,
+        'down'
+      );
+
+      controls.appendChild(upButton);
+      controls.appendChild(downButton);
+
+      item.appendChild(sceneButton);
+      item.appendChild(controls);
+
+      sceneList.appendChild(item);
+    });
+  }
+
+  function createOrderButton(
+    text,
+    label,
+    disabled,
+    sceneId,
+    direction
+  ) {
+    const button = document.createElement('button');
+
+    button.type = 'button';
+    button.textContent = text;
+    button.title = label;
+    button.setAttribute('aria-label', label);
+    button.disabled = disabled;
+    button.dataset.moveScene = sceneId;
+    button.dataset.direction = direction;
+
+    return button;
+  }
+
+  // -----------------------------------------
+  // TIMELINE
+  // -----------------------------------------
+
+  function renderTimeline() {
+    if (!sceneTimeline) {
+      return;
+    }
+
+    sceneTimeline.replaceChildren();
+
+    if (scenes.length === 0) {
+      const empty = document.createElement('div');
+
+      empty.className = 'timeline-empty';
+      empty.textContent = 'Your scene timeline will appear here.';
+
+      sceneTimeline.appendChild(empty);
+      return;
+    }
+
+    scenes.forEach((scene, index) => {
+      const item = document.createElement('div');
+
+      item.className = 'timeline-scene';
+
+      if (scene.id === selectedSceneId) {
+        item.classList.add('active');
+      }
+
+      item.dataset.sceneId = scene.id;
+
+      const sceneTitle = document.createElement('div');
+
+      sceneTitle.className = 'timeline-scene-title';
+      sceneTitle.textContent = scene.title || `Scene ${index + 1}`;
+
+      const duration = document.createElement('div');
+
+      duration.className = 'timeline-scene-duration';
+      duration.textContent = formatDuration(scene.duration);
+
+      item.appendChild(sceneTitle);
+      item.appendChild(duration);
 
       sceneTimeline.appendChild(item);
     });
-  };
+  }
 
-  const renderAll = () => {
+  // -----------------------------------------
+  // EDITOR
+  // -----------------------------------------
+
+  function collectEditorData() {
+    return {
+      title: editorFields.title?.value.trim() || '',
+      description: editorFields.description?.value.trim() || '',
+      location: editorFields.location?.value.trim() || '',
+      characters: editorFields.characters?.value.trim() || '',
+      action: editorFields.action?.value.trim() || '',
+      dialogue: editorFields.dialogue?.value.trim() || '',
+      duration: Math.max(
+        1,
+        Number(editorFields.duration?.value) || 30
+      ),
+      camera: editorFields.camera?.value.trim() || '',
+      animation: editorFields.animation?.value.trim() || '',
+      notes: editorFields.notes?.value.trim() || ''
+    };
+  }
+
+  function fillEditor(scene) {
+    if (!scene) {
+      return;
+    }
+
+    Object.entries(editorFields).forEach(([key, element]) => {
+      if (element) {
+        element.value = scene[key] ?? '';
+      }
+    });
+
+    if ($('sceneDetailHeading')) {
+      $('sceneDetailHeading').textContent =
+        scene.title || 'Edit Scene';
+    }
+
+    if ($('sceneEditorHeading')) {
+      $('sceneEditorHeading').textContent =
+        'Scene Editor';
+    }
+
+    if ($('sceneDetailEmpty')) {
+      $('sceneDetailEmpty').hidden = true;
+    }
+
+    if (editorForm) {
+      editorForm.hidden = false;
+    }
+
+    if ($('deleteSceneBtn')) {
+      $('deleteSceneBtn').hidden = false;
+    }
+  }
+
+  function clearEditor() {
+    selectedSceneId = null;
+
+    Object.values(editorFields).forEach(element => {
+      if (element) {
+        element.value = '';
+      }
+    });
+
+    if ($('sceneDetailHeading')) {
+      $('sceneDetailHeading').textContent = 'Scene Details';
+    }
+
+    if ($('sceneDetailEmpty')) {
+      $('sceneDetailEmpty').hidden = false;
+    }
+
+    if (editorForm) {
+      editorForm.hidden = true;
+    }
+
+    if ($('deleteSceneBtn')) {
+      $('deleteSceneBtn').hidden = true;
+    }
+
     renderSceneList();
     renderTimeline();
-    updateSceneCount();
-  };
+  }
 
-  // =========================================================
-  // ADD SCENE
-  // =========================================================
+  function openSceneEditor(sceneId) {
+    const scene = scenes.find(item => item.id === sceneId);
 
-  const addScene = () => {
-    const scene = {
-      id: createId(),
+    if (!scene) {
+      return;
+    }
+
+    selectedSceneId = sceneId;
+
+    fillEditor(scene);
+    renderSceneList();
+    renderTimeline();
+  }
+
+  function addScene() {
+    const newScene = {
+      id: `scene_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
       projectId: currentProjectId,
-      title: 'Scene ' + (scenes.length + 1),
+      order: scenes.length,
+      title: `Scene ${scenes.length + 1}`,
       description: '',
       location: '',
       characters: '',
       action: '',
       dialogue: '',
-      duration: '30',
+      duration: 30,
       camera: '',
       animation: '',
       notes: ''
     };
 
-    scenes.push(scene);
+    scenes.push(newScene);
 
-    if (!persistScenes()) return;
-
-    renderAll();
-    openEditor(scene);
-
-    if (fields.title) {
-      fields.title.focus();
-      fields.title.select();
-    }
-  };
-
-  // =========================================================
-  // SAVE SCENE
-  // =========================================================
-
-  const saveScene = () => {
-    const scene = getScene(selectedSceneId);
-
-    if (!scene) {
-      alert('Select a scene before saving.');
+    if (!persistScenes()) {
+      scenes.pop();
       return;
     }
 
-    Object.assign(scene, collectEditorData());
+    renderAll();
+    openSceneEditor(newScene.id);
+  }
 
-    scene.projectId = currentProjectId;
-
-    if (!scene.title) {
-      scene.title = 'Scene ' + getSceneNumber(scene.id);
+  function saveScene() {
+    if (!selectedSceneId) {
+      return;
     }
 
-    if (!persistScenes()) return;
+    const scene = scenes.find(item => item.id === selectedSceneId);
+
+    if (!scene) {
+      return;
+    }
+
+    const updatedData = collectEditorData();
+
+    Object.assign(scene, updatedData);
+
+    if (!scene.title) {
+      scene.title = `Scene ${scenes.indexOf(scene) + 1}`;
+    }
+
+    if (!persistScenes()) {
+      return;
+    }
 
     renderAll();
-    openEditor(scene);
-  };
+    openSceneEditor(scene.id);
+  }
 
-  // =========================================================
-  // DELETE SCENE
-  // =========================================================
-
-  const deleteScene = () => {
-    const scene = getScene(selectedSceneId);
-
-    if (!scene) return;
+  function deleteScene() {
+    if (!selectedSceneId) {
+      return;
+    }
 
     const confirmed = confirm(
-      'Delete "' + (scene.title || 'this scene') + '"?'
+      'Are you sure you want to delete this scene?'
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
-    scenes = scenes.filter(item => item.id !== scene.id);
-    selectedSceneId = null;
+    const previousScenes = [...scenes];
 
-    if (!persistScenes()) return;
+    scenes = scenes.filter(
+      scene => scene.id !== selectedSceneId
+    );
 
-    renderAll();
+    if (!persistScenes()) {
+      scenes = previousScenes;
+      return;
+    }
+
     clearEditor();
-  };
+    renderAll();
+  }
 
-  // =========================================================
-  // REORDER SCENES
-  // =========================================================
+  function moveScene(sceneId, direction) {
+    const index = scenes.findIndex(
+      scene => scene.id === sceneId
+    );
 
-  const moveScene = (id, direction) => {
-    const index = scenes.findIndex(scene => scene.id === id);
+    if (index < 0) {
+      return;
+    }
 
-    if (index === -1) return;
+    const newIndex = direction === 'up'
+      ? index - 1
+      : index + 1;
 
-    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= scenes.length) {
+      return;
+    }
 
-    if (newIndex < 0 || newIndex >= scenes.length) return;
+    const previousScenes = [...scenes];
 
-    const temp = scenes[index];
+    [scenes[index], scenes[newIndex]] =
+      [scenes[newIndex], scenes[index]];
 
-    scenes[index] = scenes[newIndex];
-    scenes[newIndex] = temp;
-
-    if (!persistScenes()) return;
+    if (!persistScenes()) {
+      scenes = previousScenes;
+      return;
+    }
 
     renderAll();
 
     if (selectedSceneId) {
-      openEditor(getScene(selectedSceneId));
+      openSceneEditor(selectedSceneId);
     }
-  };
-
-  // =========================================================
-  // EVENTS
-  // =========================================================
-
-  if (addSceneBtn) {
-    addSceneBtn.addEventListener('click', addScene);
   }
 
-  if (saveSceneBtn) {
-    saveSceneBtn.addEventListener('click', saveScene);
-  }
-
-  if (deleteSceneBtn) {
-    deleteSceneBtn.addEventListener('click', deleteScene);
-  }
-
-  if (sceneList) {
-    sceneList.addEventListener('click', event => {
-      const selectButton = event.target.closest('[data-scene-select]');
-      const upButton = event.target.closest('[data-scene-up]');
-      const downButton = event.target.closest('[data-scene-down]');
-
-      if (selectButton) {
-        openEditor(getScene(selectButton.dataset.sceneSelect));
-      }
-
-      if (upButton) {
-        moveScene(upButton.dataset.sceneUp, -1);
-      }
-
-      if (downButton) {
-        moveScene(downButton.dataset.sceneDown, 1);
-      }
-    });
-  }
-
-  // =========================================================
+  // -----------------------------------------
   // NAVIGATION
-  // =========================================================
+  // -----------------------------------------
 
-  const navButtons = document.querySelectorAll(
-    '[data-view], [data-open-view], [data-navigate-view]'
-  );
-
-  const views = document.querySelectorAll('.workspace-view');
-
-  const switchView = viewName => {
+  function switchView(viewName) {
     if (!viewName) return;
 
-    const target = document.getElementById('view-' + viewName);
+    currentView = viewName;
 
-    if (!target) return;
-
-    views.forEach(view => {
-      view.classList.remove('active');
+    document.querySelectorAll('[data-view]').forEach(button => {
+      button.classList.toggle(
+        'active',
+        button.dataset.view === viewName
+      );
     });
 
-    target.classList.add('active');
-
-    navButtons.forEach(button => {
-      const buttonView =
-        button.dataset.view ||
-        button.dataset.openView ||
-        button.dataset.navigateView;
-
-      button.classList.toggle('active', buttonView === viewName);
+    document.querySelectorAll('.workspace-view').forEach(view => {
+      view.classList.toggle(
+        'active',
+        view.id === `view-${viewName}`
+      );
     });
 
-    try {
-      sessionStorage.setItem('storyforge_active_view', viewName);
-    } catch (error) {
-      console.warn('Could not save active view.');
+    const workspaceTitle = $('currentWorkspaceName');
+
+    if (workspaceTitle) {
+      const viewNames = {
+        overview: 'Overview',
+        scenes: 'Scenes',
+        characters: 'Characters',
+        worlds: 'Worlds',
+        audio: 'Audio',
+        pipeline: 'Pipeline',
+        export: 'Export'
+      };
+
+      workspaceTitle.textContent =
+        viewNames[viewName] || viewName;
     }
-  };
 
-  navButtons.forEach(button => {
-    button.addEventListener('click', () => {
-      const viewName =
-        button.dataset.view ||
-        button.dataset.openView ||
-        button.dataset.navigateView;
+    sessionStorage.setItem(
+      'storyforge_production_view',
+      currentView
+    );
+  }
 
-      switchView(viewName);
-    });
-  });
+  // -----------------------------------------
+  // EXPORT
+  // -----------------------------------------
 
-  // =========================================================
-  // CONFIGURATION EXPORT
-  // =========================================================
-
-  const exportConfiguration = () => {
+  function exportConfiguration() {
     const exportData = {
-      project: projectConfig || {},
-      projectId: currentProjectId,
+      project: projectConfig,
       scenes: scenes,
-      exportedAt: new Date().toISOString()
+      exportedAt: new Date().toISOString(),
+      projectId: currentProjectId
     };
 
-    const json = JSON.stringify(exportData, null, 2);
-
-    const blob = new Blob([json], {
-      type: 'application/json'
-    });
+    const blob = new Blob(
+      [JSON.stringify(exportData, null, 2)],
+      { type: 'application/json' }
+    );
 
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
 
     link.href = url;
-    link.download = 'storyforge-project-' + currentProjectId + '.json';
+    link.download =
+      `${getProjectName().replace(/[^a-z0-9]/gi, '_')}_storyforge.json`;
+
+    document.body.appendChild(link);
     link.click();
+    link.remove();
 
     URL.revokeObjectURL(url);
-  };
+  }
 
-  const exportButtons = document.querySelectorAll(
-    '[data-export-config], #exportConfigBtn, #exportProjectBtn'
-  );
+  // -----------------------------------------
+  // RENDER
+  // -----------------------------------------
 
-  exportButtons.forEach(button => {
-    button.addEventListener('click', exportConfiguration);
+  function renderAll() {
+    renderConfiguration();
+    renderSceneList();
+    renderTimeline();
+    updateDashboard();
+  }
+
+  // -----------------------------------------
+  // EVENT LISTENERS
+  // -----------------------------------------
+
+  const addSceneButton = $('addSceneBtn');
+
+  if (addSceneButton) {
+    addSceneButton.addEventListener('click', addScene);
+  }
+
+  // Prevent form reload when saving a scene
+  if (editorForm) {
+    editorForm.addEventListener('submit', event => {
+      event.preventDefault();
+      saveScene();
+    });
+  }
+
+  const deleteSceneButton = $('deleteSceneBtn');
+
+  if (deleteSceneButton) {
+    deleteSceneButton.addEventListener(
+      'click',
+      deleteScene
+    );
+  }
+
+  if (sceneList) {
+    sceneList.addEventListener('click', event => {
+      const moveButton = event.target.closest(
+        '[data-move-scene]'
+      );
+
+      if (moveButton) {
+        moveScene(
+          moveButton.dataset.moveScene,
+          moveButton.dataset.direction
+        );
+        return;
+      }
+
+      const sceneButton = event.target.closest(
+        '[data-scene-id]'
+      );
+
+      if (sceneButton) {
+        openSceneEditor(sceneButton.dataset.sceneId);
+      }
+    });
+  }
+
+  if (sceneTimeline) {
+    sceneTimeline.addEventListener('click', event => {
+      const sceneElement = event.target.closest(
+        '[data-scene-id]'
+      );
+
+      if (sceneElement) {
+        openSceneEditor(sceneElement.dataset.sceneId);
+      }
+    });
+  }
+
+  document.addEventListener('click', event => {
+    const viewButton = event.target.closest('[data-view]');
+
+    if (viewButton) {
+      switchView(viewButton.dataset.view);
+      return;
+    }
+
+    const openViewButton = event.target.closest(
+      '[data-open-view], [data-navigate-view]'
+    );
+
+    if (openViewButton) {
+      const view =
+        openViewButton.dataset.openView ||
+        openViewButton.dataset.navigateView;
+
+      switchView(view);
+    }
   });
 
-  // =========================================================
+  document.querySelectorAll(
+    '[data-export-config], #exportConfigBtn, #exportProjectBtn'
+  ).forEach(button => {
+    button.addEventListener(
+      'click',
+      exportConfiguration
+    );
+  });
+
+  // -----------------------------------------
   // INITIALIZATION
-  // =========================================================
+  // -----------------------------------------
 
   loadConfiguration();
   loadScenes();
+
   renderAll();
   clearEditor();
 
-  try {
-    const savedView = sessionStorage.getItem('storyforge_active_view');
-
-    if (savedView) {
-      switchView(savedView);
-    }
-  } catch (error) {
-    console.warn('Could not restore previous view.');
-  }
-
-  console.log(
-    'StoryForge Production Studio initialized for project:',
-    currentProjectId
+  const savedView = sessionStorage.getItem(
+    'storyforge_production_view'
   );
+
+  switchView(savedView || 'overview');
 });
-        
