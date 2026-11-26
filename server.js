@@ -15,6 +15,9 @@ app.use((req, res, next) => {
   next();
 });
 const { createStoryDirectorRouter } = require('./agents/story-director/storyforge-story-director.js');
+const {
+  createProductionOrchestratorRouter
+} = require('./agents/storyforge-production-orchestrator');
 // Learning API
 const { createLearningRouter } = require('./storyforge-learning');
 app.use('/api/learning', createLearningRouter());
