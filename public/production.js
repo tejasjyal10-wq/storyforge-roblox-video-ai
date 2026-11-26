@@ -1,9 +1,110 @@
+
 'use strict';
 
 document.addEventListener('DOMContentLoaded', () => {
   const storyConfigKey = 'storyforge_config';
+  const getElement = (id) => document.getElementById(id);
 
-  // Read the configuration saved by Studio
+  const setText = (id, value, fallback = 'Not specified') => {
+    const element = getElement(id);
+    if (element) {
+      element.textContent = value || fallback;
+    }
+  };
+
+  // =========================================================
+  // WORKSPACE NAVIGATION
+  // =========================================================
+
+  const viewTitles = {
+    overview: 'Overview',
+    scenes: 'Scene Editor',
+    characters: 'Characters',
+    worlds: 'Worlds',
+    audio: 'Audio Studio',
+    pipeline: 'Production Pipeline',
+    export: 'Export'
+  };
+
+  const navItems = document.querySelectorAll('.nav-item');
+  const workspaceViews = document.querySelectorAll('.workspace-view');
+  const workspaceTitle = getElement('currentWorkspaceName');
+
+  function openView(viewName) {
+    if (!viewTitles[viewName]) return;
+
+    // Update sidebar
+    navItems.forEach(item => {
+      const isActive = item.dataset.view === viewName;
+
+      item.classList.toggle('active', isActive);
+
+      if (isActive) {
+        item.setAttribute('aria-current', 'page');
+      } else {
+        item.removeAttribute('aria-current');
+      }
+    });
+
+    // Update workspace content
+    workspaceViews.forEach(view => {
+      const isActive = view.id === `view-${viewName}`;
+      view.classList.toggle('active', isActive);
+    });
+
+    // Update page title
+    if (workspaceTitle) {
+      workspaceTitle.textContent = viewTitles[viewName];
+    }
+
+    // Remember active view for this session
+    try {
+      sessionStorage.setItem('storyforge_active_view', viewName);
+    } catch (error) {
+      console.warn('Could not save workspace view:', error);
+    }
+  }
+
+  // Sidebar navigation
+  navItems.forEach(item => {
+    item.addEventListener('click', () => {
+      openView(item.dataset.view);
+    });
+  });
+
+  // Quick-access cards and buttons
+  document.querySelectorAll('[data-open-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      openView(button.dataset.openView);
+    });
+  });
+
+  // Any element can open a workspace using data-view
+  document.querySelectorAll('[data-navigate-view]').forEach(button => {
+    button.addEventListener('click', () => {
+      openView(button.dataset.navigateView);
+    });
+  });
+
+  // Start on Overview, or restore the previous workspace
+  let initialView = 'overview';
+
+  try {
+    const savedView = sessionStorage.getItem('storyforge_active_view');
+
+    if (savedView && viewTitles[savedView]) {
+      initialView = savedView;
+    }
+  } catch (error) {
+    console.warn('Could not restore workspace view:', error);
+  }
+
+  openView(initialView);
+
+  // =========================================================
+  // LOAD STORY CONFIGURATION FROM STUDIO
+  // =========================================================
+
   let config = null;
 
   try {
@@ -16,16 +117,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.error('Could not load StoryForge configuration:', error);
   }
 
-  const getElement = (id) => document.getElementById(id);
+  // =========================================================
+  // NO CONFIGURATION
+  // =========================================================
 
-  const setText = (id, value, fallback = 'Not specified') => {
-    const element = getElement(id);
-    if (element) {
-      element.textContent = value || fallback;
-    }
-  };
-
-  // No configuration found
   if (!config) {
     setText('productionStatusTitle', 'No Story Configuration Found');
     setText(
@@ -38,35 +133,55 @@ document.addEventListener('DOMContentLoaded', () => {
     setText('productionDuration', 'Not selected');
     setText('productionQuality', 'Not selected');
     setText('productionCharacterMode', 'Not selected');
+
     setText(
       'productionCharacterDescription',
       'Choose your character settings in Studio.'
     );
 
     const genresContainer = getElement('productionGenres');
+
     if (genresContainer) {
-      genresContainer.innerHTML = '<span class="genre-tag">No genres</span>';
+      genresContainer.innerHTML =
+        '<span class="genre-tag">No genres</span>';
     }
 
+    // Prevent exporting an empty configuration
+    const downloadButton = getElement('downloadConfigBtn');
+
+    if (downloadButton) {
+      downloadButton.disabled = true;
+      downloadButton.title = 'Configure a story in Studio first.';
+    }
+
+    console.log('StoryForge Production opened without a configuration.');
     return;
   }
 
+  // =========================================================
   // STORY IDEA
+  // =========================================================
+
   setText(
     'productionStoryIdea',
     config.storyIdea,
     'No story idea provided.'
   );
 
-  // GENRES: support single genre, multiple genres,
-  // and additional typed genres.
+  // =========================================================
+  // GENRES
+  // =========================================================
+
   let genres = [];
 
   if (Array.isArray(config.genres)) {
     genres = config.genres;
   } else if (Array.isArray(config.genre)) {
     genres = config.genre;
-  } else if (typeof config.genre === 'string' && config.genre.trim()) {
+  } else if (
+    typeof config.genre === 'string' &&
+    config.genre.trim()
+  ) {
     genres = config.genre.split(',');
   }
 
@@ -106,7 +221,10 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // =========================================================
   // CINEMATIC SETTINGS
+  // =========================================================
+
   setText(
     'productionVisualStyle',
     config.visualStyle,
@@ -128,13 +246,12 @@ document.addEventListener('DOMContentLoaded', () => {
     durationLabels[durationValue] || `${durationValue} Seconds`
   );
 
-  setText(
-    'productionQuality',
-    config.quality,
-    'High'
-  );
+  setText('productionQuality', config.quality, 'High');
 
+  // =========================================================
   // CHARACTER CONFIGURATION
+  // =========================================================
+
   const characterModes = {
     library: {
       title: 'Character Library',
@@ -156,12 +273,16 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   setText('productionCharacterMode', characterMode.title);
+
   setText(
     'productionCharacterDescription',
     characterMode.description
   );
 
+  // =========================================================
   // AUDIO SETTINGS
+  // =========================================================
+
   const audioConfig = config.audio || {};
 
   const updateAudio = (id, enabled) => {
@@ -182,20 +303,31 @@ document.addEventListener('DOMContentLoaded', () => {
   updateAudio('audioNarration', audioConfig.voiceNarration);
   updateAudio('audioDialogue', audioConfig.characterDialogue);
 
-  // STATUS
+  // =========================================================
+  // CONFIGURATION STATUS
+  // =========================================================
+
   setText('productionStatusTitle', 'Configuration Received');
+
   setText(
     'productionStatusDescription',
     'Your story settings have been successfully loaded from Studio.'
   );
+
   setText('productionStatusBadge', 'CONFIGURED');
 
+  // =========================================================
   // CONFIGURATION EXPORT
+  // =========================================================
+
   const downloadButton = getElement('downloadConfigBtn');
 
   if (downloadButton) {
+    downloadButton.disabled = false;
+
     downloadButton.addEventListener('click', () => {
       const fileContent = JSON.stringify(config, null, 2);
+
       const blob = new Blob([fileContent], {
         type: 'application/json'
       });
@@ -210,10 +342,9 @@ document.addEventListener('DOMContentLoaded', () => {
       downloadLink.click();
       downloadLink.remove();
 
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   }
 
   console.log('StoryForge Production configuration loaded.');
 });
-                          
