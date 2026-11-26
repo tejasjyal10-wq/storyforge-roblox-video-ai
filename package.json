@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "StoryForge multi-agent Roblox story production system",
   "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js",
-    "test": "node tests/core-engine.test.js"
+"scripts": {
+  "start": "node server.js",
+  "dev": "node --watch server.js",
+  "test": "node tests/core-engine.test.js && node tests/story-director.test.js"
   },
   "engines": {
     "node": ">=18"
