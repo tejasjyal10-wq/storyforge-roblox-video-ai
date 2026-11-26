@@ -2,12 +2,19 @@
 'use strict';
 
 const ProductionOutputValidator = require('./production-output-validator');
+const AgentExecutionPolicy = require('./agent-execution-policy');
+
 const {
   getProductionStages
 } = require('./production-pipeline-definition');
 
 class PipelineEngine {
-  constructor({ registry, jobManager, validator } = {}) {
+  constructor({
+    registry,
+    jobManager,
+    validator,
+    executionPolicy
+  } = {}) {
     if (!registry) {
       throw new Error('PipelineEngine requires an AgentRegistry.');
     }
@@ -20,11 +27,11 @@ class PipelineEngine {
     this.jobManager = jobManager;
 
     this.validator = validator || new ProductionOutputValidator();
+
+    this.executionPolicy =
+      executionPolicy || new AgentExecutionPolicy();
   }
 
-  /**
-   * Resolves an agent from supported registry interfaces.
-   */
   resolveAgent(agentId) {
     let agent = null;
 
@@ -48,11 +55,7 @@ class PipelineEngine {
       }
     }
 
-    if (!agent) {
-      return null;
-    }
-
-    if (typeof agent.run !== 'function') {
+    if (!agent || typeof agent.run !== 'function') {
       return null;
     }
 
@@ -63,19 +66,15 @@ class PipelineEngine {
     return {
       id: agent.id || agentId,
       name: agent.name || agentId,
-      run: agent.run.bind(agent)
+      run: agent.run.bind(agent),
+      executionPolicy: agent.executionPolicy || {}
     };
   }
 
-  /**
-   * Converts legacy agent stages and new production stages
-   * into a consistent format.
-   */
   normalizeStages(stages) {
-    const sourceStages =
-      stages.length > 0
-        ? stages
-        : getProductionStages();
+    const sourceStages = stages.length > 0
+      ? stages
+      : getProductionStages();
 
     return sourceStages.map(stage => ({
       id: stage.id,
@@ -91,13 +90,12 @@ class PipelineEngine {
         : [],
       requiredOutputs: Array.isArray(stage.requiredOutputs)
         ? [...stage.requiredOutputs]
-        : []
+        : [],
+      executionPolicy: stage.executionPolicy || {},
+      agentPolicies: stage.agentPolicies || {}
     }));
   }
 
-  /**
-   * Validates pipeline stage configuration before execution.
-   */
   validateStages(stages) {
     const errors = [];
     const stageIds = new Set();
@@ -134,9 +132,27 @@ class PipelineEngine {
     }
   }
 
-  /**
-   * Runs the production pipeline sequentially.
-   */
+  getExecutionOptions(stage, agent) {
+    const options = {
+      ...stage.executionPolicy,
+      ...agent.executionPolicy,
+      ...(stage.agentPolicies[agent.id] || {})
+    };
+
+    const allowed = [
+      'maxRetries',
+      'timeoutMs',
+      'retryDelayMs',
+      'retryOn'
+    ];
+
+    return Object.fromEntries(
+      Object.entries(options).filter(([key]) =>
+        allowed.includes(key)
+      )
+    );
+  }
+
   async run({
     idea,
     input = {},
@@ -152,7 +168,7 @@ class PipelineEngine {
 
     const normalizedStages = this.normalizeStages(stages);
 
-    if (normalizedStages.length === 0) {
+    if (!normalizedStages.length) {
       throw new Error('Pipeline stages must be provided.');
     }
 
@@ -182,12 +198,14 @@ class PipelineEngine {
       output: null,
       validation: null,
       agentValidations: [],
+      executionHistory: [],
       error: null,
       startedAt: null,
       completedAt: null
     }));
 
     this.jobManager.setStages(job.jobId, stageRecords);
+
     this.jobManager.updateJob(job.jobId, {
       status: 'running'
     });
@@ -223,7 +241,6 @@ class PipelineEngine {
         continue;
       }
 
-      // Verify dependencies.
       const dependenciesCompleted = stage.dependsOn.every(
         dependencyId => {
           const dependency = currentJob.stages.find(
@@ -244,7 +261,6 @@ class PipelineEngine {
         continue;
       }
 
-      // All agents must be available before this stage can run.
       const unavailableAgent = stage.resolvedAgents.find(
         item => !item.agent
       );
@@ -266,9 +282,9 @@ class PipelineEngine {
 
       const stageAgentOutputs = {};
       const agentValidations = [];
+      const executionHistory = [];
 
       try {
-        // Execute agents sequentially inside each stage.
         for (const resolved of stage.resolvedAgents) {
           const agent = resolved.agent;
 
@@ -290,13 +306,23 @@ class PipelineEngine {
             }
           };
 
-          const output = await agent.run(agentContext);
-
-          // Validate every individual agent output.
-          const agentValidation = this.validator.validateAgentOutput(
-            agent.id,
-            output
+          const execution = await this.executionPolicy.execute(
+            () => agent.run(agentContext),
+            this.getExecutionOptions(stage, agent)
           );
+
+          executionHistory.push({
+            agentId: agent.id,
+            ...execution
+          });
+
+          const output = execution.result;
+
+          const agentValidation =
+            this.validator.validateAgentOutput(
+              agent.id,
+              output
+            );
 
           agentValidations.push({
             agentId: agent.id,
@@ -304,43 +330,40 @@ class PipelineEngine {
           });
 
           if (!agentValidation.valid) {
-            const validationError = new Error(
+            const error = new Error(
               `Output validation failed for agent "${agent.id}": ` +
               agentValidation.errors.join('; ')
             );
 
-            validationError.validation = agentValidation;
-            throw validationError;
+            error.validation = agentValidation;
+            throw error;
           }
 
           stageAgentOutputs[agent.id] = output;
-
           context.agentOutputs[agent.id] = output;
         }
 
-        // Build the combined stage output.
         const stageOutput =
           stage.resolvedAgents.length === 1
             ? stageAgentOutputs[stage.resolvedAgents[0].id]
             : { ...stageAgentOutputs };
 
-        // Validate the combined stage output.
-        const stageValidation = this.validator.validateStageOutput(
-          stage.id,
-          stageOutput
-        );
+        const stageValidation =
+          this.validator.validateStageOutput(
+            stage.id,
+            stageOutput
+          );
 
         if (!stageValidation.valid) {
-          const validationError = new Error(
+          const error = new Error(
             `Stage validation failed for "${stage.name}": ` +
             stageValidation.errors.join('; ')
           );
 
-          validationError.validation = stageValidation;
-          throw validationError;
+          error.validation = stageValidation;
+          throw error;
         }
 
-        // Only store outputs after successful validation.
         this.jobManager.setOutput(
           job.jobId,
           stage.id,
@@ -356,6 +379,7 @@ class PipelineEngine {
           output: stageOutput,
           validation: stageValidation,
           agentValidations,
+          executionHistory,
           completedAt: Date.now()
         });
       } catch (error) {
@@ -364,6 +388,7 @@ class PipelineEngine {
           error: error.message || 'Production stage failed.',
           validation: error.validation || null,
           agentValidations,
+          executionHistory,
           completedAt: Date.now()
         });
 
@@ -414,4 +439,4 @@ class PipelineEngine {
 }
 
 module.exports = PipelineEngine;
-          
+                                    
