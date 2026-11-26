@@ -10,8 +10,8 @@ async function runTests() {
   // Test 1: Story Director is registered
   assert.equal(integration.registry.has('storyDirector'), true);
 
-  // Test 2: Agent Registry contains the agent
-  assert.equal(integration.registry.list().length, 1);
+  // Test 2: Exactly one agent is registered
+  assert.equal(integration.registry.count, 1);
 
   // Test 3: Pipeline accepts a story idea
   const result = await integration.run(
@@ -21,22 +21,21 @@ async function runTests() {
   assert.ok(result);
   assert.ok(result.jobId);
 
-  // Test 4: Job is created
+  // Test 4: Job is created and retrievable
   const job = integration.getJob(result.jobId);
   assert.ok(job);
 
   // Test 5: Story Director produces an output
-  assert.ok(result.outputs);
-  assert.ok(result.outputs.storyDirector);
+  assert.ok(job.outputs.storyDirector);
 
   // Test 6: Story concept contains a title
-  assert.ok(result.outputs.storyDirector.concept.title);
+  assert.ok(job.outputs.storyDirector.concept.title);
 
   // Test 7: Story concept contains a genre
-  assert.ok(result.outputs.storyDirector.concept.genre);
+  assert.ok(job.outputs.storyDirector.concept.genre);
 
   // Test 8: Story concept contains themes
-  assert.ok(Array.isArray(result.outputs.storyDirector.concept.themes));
+  assert.ok(Array.isArray(job.outputs.storyDirector.concept.themes));
 
   // Test 9: Empty idea is rejected
   await assert.rejects(
