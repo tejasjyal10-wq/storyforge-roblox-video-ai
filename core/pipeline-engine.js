@@ -1,11 +1,13 @@
+
 'use strict';
 
+const ProductionOutputValidator = require('./production-output-validator');
 const {
   getProductionStages
 } = require('./production-pipeline-definition');
 
 class PipelineEngine {
-  constructor({ registry, jobManager }) {
+  constructor({ registry, jobManager, validator } = {}) {
     if (!registry) {
       throw new Error('PipelineEngine requires an AgentRegistry.');
     }
@@ -16,9 +18,13 @@ class PipelineEngine {
 
     this.registry = registry;
     this.jobManager = jobManager;
+
+    this.validator = validator || new ProductionOutputValidator();
   }
 
-  // Resolve agents while supporting both existing registry implementations.
+  /**
+   * Resolves an agent from supported registry interfaces.
+   */
   resolveAgent(agentId) {
     let agent = null;
 
@@ -30,7 +36,23 @@ class PipelineEngine {
       agent = this.registry.get(agentId);
     }
 
+    if (!agent && typeof this.registry.getHandler === 'function') {
+      const handler = this.registry.getHandler(agentId);
+
+      if (handler) {
+        agent = {
+          id: agentId,
+          name: agentId,
+          run: handler
+        };
+      }
+    }
+
     if (!agent) {
+      return null;
+    }
+
+    if (typeof agent.run !== 'function') {
       return null;
     }
 
@@ -38,87 +60,83 @@ class PipelineEngine {
       return null;
     }
 
-    let handler = null;
-
-    if (typeof agent.run === 'function') {
-      handler = context => agent.run(context);
-    } else if (typeof agent.handler === 'function') {
-      handler = context => agent.handler(context);
-    } else if (
-      typeof this.registry.getHandler === 'function'
-    ) {
-      const registeredHandler = this.registry.getHandler(agentId);
-
-      if (typeof registeredHandler === 'function') {
-        handler = context => registeredHandler(context);
-      }
-    }
-
-    if (!handler) {
-      return null;
-    }
-
     return {
-      id: agentId,
+      id: agent.id || agentId,
       name: agent.name || agentId,
-      run: handler
+      run: agent.run.bind(agent)
     };
   }
 
+  /**
+   * Converts legacy agent stages and new production stages
+   * into a consistent format.
+   */
   normalizeStages(stages) {
-    const source = stages.length > 0
-      ? stages
-      : getProductionStages();
+    const sourceStages =
+      stages.length > 0
+        ? stages
+        : getProductionStages();
 
-    return source.map((stage, index) => ({
-      id: stage.id || `stage-${index + 1}`,
-      name: stage.name || stage.id || `Stage ${index + 1}`,
-      order: stage.order || index + 1,
+    return sourceStages.map(stage => ({
+      id: stage.id,
+      name: stage.name || stage.id,
       agents: Array.isArray(stage.agents)
         ? [...stage.agents]
-        : [stage.id],
+        : stage.id
+          ? [stage.id]
+          : [],
+      outputKey: stage.outputKey || stage.id,
       dependsOn: Array.isArray(stage.dependsOn)
         ? [...stage.dependsOn]
         : [],
-      outputKey: stage.outputKey || stage.id,
       requiredOutputs: Array.isArray(stage.requiredOutputs)
         ? [...stage.requiredOutputs]
         : []
     }));
   }
 
+  /**
+   * Validates pipeline stage configuration before execution.
+   */
   validateStages(stages) {
+    const errors = [];
     const stageIds = new Set();
 
     for (const stage of stages) {
-      if (!stage.id) {
-        throw new Error('Every pipeline stage requires an ID.');
+      if (!stage.id || typeof stage.id !== 'string') {
+        errors.push('Every stage must have a valid ID.');
+        continue;
       }
 
       if (stageIds.has(stage.id)) {
-        throw new Error(`Duplicate pipeline stage "${stage.id}".`);
+        errors.push(`Duplicate stage ID: ${stage.id}`);
       }
 
       stageIds.add(stage.id);
 
       if (!stage.agents.length) {
-        throw new Error(
-          `Stage "${stage.id}" must have at least one agent.`
-        );
+        errors.push(`Stage "${stage.id}" has no agents.`);
       }
     }
 
     for (const stage of stages) {
       for (const dependency of stage.dependsOn) {
         if (!stageIds.has(dependency)) {
-          throw new Error(
-            `Stage "${stage.id}" has an unknown dependency "${dependency}".`
+          errors.push(
+            `Stage "${stage.id}" depends on unknown stage "${dependency}".`
           );
         }
       }
     }
+
+    if (errors.length > 0) {
+      throw new Error(errors.join('\n'));
+    }
   }
 
+  /**
+   * Runs the production pipeline sequentially.
+   */
   async run({
     idea,
     input = {},
@@ -140,20 +158,13 @@ class PipelineEngine {
 
     this.validateStages(normalizedStages);
 
-    const prepared = normalizedStages.map(stage => {
-      const agents = stage.agents.map(agentId => ({
+    const resolvedStages = normalizedStages.map(stage => ({
+      ...stage,
+      resolvedAgents: stage.agents.map(agentId => ({
         id: agentId,
         agent: this.resolveAgent(agentId)
-      }));
-
-      return {
-        ...stage,
-        resolvedAgents: agents,
-        status: agents.every(item => item.agent)
-          ? 'pending'
-          : 'unavailable'
-      };
-    });
+      }))
+    }));
 
     const job = this.jobManager.createJob({
       idea: idea.trim(),
@@ -161,20 +172,22 @@ class PipelineEngine {
       type: 'story-production'
     });
 
-    const stageRecords = prepared.map(stage => ({
+    const stageRecords = resolvedStages.map(stage => ({
       id: stage.id,
       name: stage.name,
-      order: stage.order,
-      agents: [...stage.agents],
-      status: stage.status,
+      status: stage.resolvedAgents.every(item => item.agent)
+        ? 'pending'
+        : 'unavailable',
+      agents: stage.agents,
       output: null,
+      validation: null,
+      agentValidations: [],
       error: null,
       startedAt: null,
-      finishedAt: null
+      completedAt: null
     }));
 
     this.jobManager.setStages(job.jobId, stageRecords);
-
     this.jobManager.updateJob(job.jobId, {
       status: 'running'
     });
@@ -190,48 +203,56 @@ class PipelineEngine {
 
     let stopped = false;
 
-    for (const stage of prepared) {
+    for (const stage of resolvedStages) {
+      const currentJob = this.jobManager.getJob(job.jobId);
+
+      const record = currentJob.stages.find(
+        item => item.id === stage.id
+      );
+
+      if (!record) {
+        stopped = true;
+        break;
+      }
+
       if (stopped) {
         this.jobManager.updateStage(job.jobId, stage.id, {
           status: 'skipped',
-          finishedAt: Date.now()
+          error: 'Skipped because an earlier stage did not complete.'
         });
         continue;
       }
 
-      // A stage must never run before its dependencies are complete.
+      // Verify dependencies.
       const dependenciesCompleted = stage.dependsOn.every(
-        dependency => {
-          const dependencyRecord = this.jobManager
-            .getJob(job.jobId)
-            .stages.find(record => record.id === dependency);
+        dependencyId => {
+          const dependency = currentJob.stages.find(
+            item => item.id === dependencyId
+          );
 
-          return dependencyRecord &&
-            dependencyRecord.status === 'completed';
+          return dependency && dependency.status === 'completed';
         }
       );
 
       if (!dependenciesCompleted) {
         this.jobManager.updateStage(job.jobId, stage.id, {
           status: 'skipped',
-          finishedAt: Date.now(),
-          error: 'Required dependency was not completed.'
+          error: 'Required dependency stage did not complete.'
         });
 
         stopped = true;
         continue;
       }
 
-      // An unavailable agent is a hard stop for dependent production.
-      const missingAgent = stage.resolvedAgents.find(
+      // All agents must be available before this stage can run.
+      const unavailableAgent = stage.resolvedAgents.find(
         item => !item.agent
       );
 
-      if (missingAgent) {
+      if (unavailableAgent) {
         this.jobManager.updateStage(job.jobId, stage.id, {
           status: 'unavailable',
-          finishedAt: Date.now(),
-          error: `Required agent "${missingAgent.id}" is unavailable.`
+          error: `Required agent "${unavailableAgent.id}" is unavailable.`
         });
 
         stopped = true;
@@ -244,66 +265,106 @@ class PipelineEngine {
       });
 
       const stageAgentOutputs = {};
+      const agentValidations = [];
 
       try {
-        // Agents within a stage execute sequentially.
-        // Each agent receives the outputs of previous agents.
-        for (const item of stage.resolvedAgents) {
+        // Execute agents sequentially inside each stage.
+        for (const resolved of stage.resolvedAgents) {
+          const agent = resolved.agent;
+
           const agentContext = {
             ...context,
-            stageId: stage.id,
-            stageName: stage.name,
-            currentAgent: item.id,
-            currentStageOutputs: stageAgentOutputs,
-            previousOutput: context.previousOutput
+            currentStage: {
+              id: stage.id,
+              name: stage.name,
+              outputKey: stage.outputKey
+            },
+            stageOutputs: {
+              ...context.stageOutputs
+            },
+            agentOutputs: {
+              ...context.agentOutputs
+            },
+            currentStageOutputs: {
+              ...stageAgentOutputs
+            }
           };
 
-          const output = await item.agent.run(agentContext);
+          const output = await agent.run(agentContext);
 
-          if (output === undefined || output === null) {
-            throw new Error(
-              `${item.agent.name} returned no output.`
+          // Validate every individual agent output.
+          const agentValidation = this.validator.validateAgentOutput(
+            agent.id,
+            output
+          );
+
+          agentValidations.push({
+            agentId: agent.id,
+            ...agentValidation
+          });
+
+          if (!agentValidation.valid) {
+            const validationError = new Error(
+              `Output validation failed for agent "${agent.id}": ` +
+              agentValidation.errors.join('; ')
             );
+
+            validationError.validation = agentValidation;
+            throw validationError;
           }
 
-          stageAgentOutputs[item.id] = output;
-          context.agentOutputs[item.id] = output;
+          stageAgentOutputs[agent.id] = output;
+
+          context.agentOutputs[agent.id] = output;
         }
 
-        const stageOutput = stage.resolvedAgents.length === 1
-          ? stageAgentOutputs[stage.resolvedAgents[0].id]
-          : stageAgentOutputs;
+        // Build the combined stage output.
+        const stageOutput =
+          stage.resolvedAgents.length === 1
+            ? stageAgentOutputs[stage.resolvedAgents[0].id]
+            : { ...stageAgentOutputs };
 
+        // Validate the combined stage output.
+        const stageValidation = this.validator.validateStageOutput(
+          stage.id,
+          stageOutput
+        );
+
+        if (!stageValidation.valid) {
+          const validationError = new Error(
+            `Stage validation failed for "${stage.name}": ` +
+            stageValidation.errors.join('; ')
+          );
+
+          validationError.validation = stageValidation;
+          throw validationError;
+        }
+
+        // Only store outputs after successful validation.
         this.jobManager.setOutput(
           job.jobId,
           stage.id,
           stageOutput
         );
 
-        context = {
-          ...context,
-          [stage.id]: stageOutput,
-          [stage.outputKey]: stageOutput,
-          stageOutputs: {
-            ...context.stageOutputs,
-            [stage.id]: stageOutput,
-            [stage.outputKey]: stageOutput
-          },
-          previousOutput: stageOutput
-        };
+        context.stageOutputs[stage.outputKey] = stageOutput;
+        context[stage.id] = stageOutput;
+        context.previousOutput = stageOutput;
 
         this.jobManager.updateStage(job.jobId, stage.id, {
           status: 'completed',
-          finishedAt: Date.now()
+          output: stageOutput,
+          validation: stageValidation,
+          agentValidations,
+          completedAt: Date.now()
         });
-
       } catch (error) {
-        const message = error.message || 'Pipeline agent failed.';
-
         this.jobManager.updateStage(job.jobId, stage.id, {
           status: 'failed',
-          finishedAt: Date.now(),
-          error: message
+          error: error.message || 'Production stage failed.',
+          validation: error.validation || null,
+          agentValidations,
+          completedAt: Date.now()
         });
 
         this.jobManager.addError(
@@ -338,17 +399,19 @@ class PipelineEngine {
       finalStatus = 'failed';
     } else if (unavailable) {
       finalStatus = completed > 0 ? 'partial' : 'not_ready';
+    } else if (
+      finalJob.stages.some(stage => stage.status === 'skipped')
+    ) {
+      finalStatus = completed > 0 ? 'partial' : 'not_ready';
     } else {
       finalStatus = 'completed';
     }
 
-    this.jobManager.completeJob(
-      job.jobId,
-      finalStatus
-    );
+    this.jobManager.completeJob(job.jobId, finalStatus);
 
     return this.jobManager.getJob(job.jobId);
   }
 }
 
 module.exports = PipelineEngine;
+          
