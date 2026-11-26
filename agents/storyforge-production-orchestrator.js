@@ -1,6 +1,11 @@
 'use strict';
 
 const express = require('express');
+const cors = require('cors');
+
+const {
+  createProductionOrchestratorRouter
+} = require('./agents/storyforge-production-orchestrator');
 
 const PIPELINE = [
   { id: 'storyDirector', name: 'Story Director', purpose: 'Turn the user idea into a structured story concept.' },
