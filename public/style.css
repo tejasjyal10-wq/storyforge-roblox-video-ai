@@ -149,7 +149,7 @@ a {
 /* Artwork placeholder area — actual image will be connected separately */
 
 /* STORYFORGE HERO ART */
-
+/* LANDSCAPE HERO ART */
 .hero-art {
   position: absolute;
   right: 0;
@@ -167,28 +167,12 @@ a {
 }
 
 .hero-art::before {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(
-    circle at 75% 50%,
-    rgba(120, 0, 20, 0.15),
-    transparent 65%
-  );
+  content: none;
 }
 
 .hero-art::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    90deg,
-    #080808 0%,
-    rgba(8, 8, 8, 0.15) 35%,
-    transparent 75%
-  );
+  content: none;
 }
-
 /* HERO CONTENT */
 
 .hero-content {
