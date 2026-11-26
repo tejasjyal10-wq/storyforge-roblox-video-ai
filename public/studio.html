@@ -1,0 +1,300 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryForge Studio</title>
+  <link rel="stylesheet" href="/studio.css">
+</head>
+<body>
+
+<div class="studio-background"></div>
+
+<header class="studio-header">
+  <a href="/" class="studio-logo">
+    <span class="logo-symbol">✦</span>
+    <span>STORYFORGE</span>
+  </a>
+
+  <div class="header-right">
+    <span class="studio-status">● STUDIO ONLINE</span>
+    <a href="/" class="home-link">← HOME</a>
+  </div>
+</header>
+
+<main class="studio-container">
+
+  <div class="studio-intro">
+    <div class="studio-eyebrow">YOUR CREATIVE WORKSPACE</div>
+    <h1>CREATE YOUR <span>STORY</span></h1>
+    <p>Turn your imagination into a Roblox cinematic adventure.</p>
+  </div>
+
+  <form id="studioForm">
+
+    <!-- STORY IDEA -->
+
+    <section class="studio-card">
+      <div class="card-heading">
+        <span class="step-number">01</span>
+        <div>
+          <h2>Story Concept</h2>
+          <p>Tell us what happens in your story.</p>
+        </div>
+      </div>
+
+      <label for="storyIdea">YOUR STORY IDEA</label>
+
+      <textarea
+        id="storyIdea"
+        name="storyIdea"
+        placeholder="A young hero discovers a mysterious portal hidden beneath an abandoned Roblox city..."
+        required
+      ></textarea>
+
+      <div class="input-footer">
+        <span>Be creative. Anything is possible.</span>
+        <span id="characterCount">0 characters</span>
+      </div>
+    </section>
+
+    <!-- GENRE -->
+
+    <section class="studio-card">
+      <div class="card-heading">
+        <span class="step-number">02</span>
+        <div>
+          <h2>Story Genre</h2>
+          <p>Select the atmosphere of your adventure.</p>
+        </div>
+      </div>
+
+      <div class="genre-grid">
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Adventure" checked>
+          <span class="genre-content">
+            <span class="genre-icon">⚔️</span>
+            <strong>Adventure</strong>
+          </span>
+        </label>
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Fantasy">
+          <span class="genre-content">
+            <span class="genre-icon">✨</span>
+            <strong>Fantasy</strong>
+          </span>
+        </label>
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Mystery">
+          <span class="genre-content">
+            <span class="genre-icon">🔍</span>
+            <strong>Mystery</strong>
+          </span>
+        </label>
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Comedy">
+          <span class="genre-content">
+            <span class="genre-icon">🎭</span>
+            <strong>Comedy</strong>
+          </span>
+        </label>
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Action">
+          <span class="genre-content">
+            <span class="genre-icon">🔥</span>
+            <strong>Action</strong>
+          </span>
+        </label>
+
+        <label class="genre-option">
+          <input type="radio" name="genre" value="Sci-Fi">
+          <span class="genre-content">
+            <span class="genre-icon">🚀</span>
+            <strong>Sci-Fi</strong>
+          </span>
+        </label>
+
+      </div>
+    </section>
+
+    <!-- CHARACTERS -->
+
+    <section class="studio-card">
+      <div class="card-heading">
+        <span class="step-number">03</span>
+        <div>
+          <h2>Characters</h2>
+          <p>Choose how your story's cast will be created.</p>
+        </div>
+      </div>
+
+      <div class="character-options">
+
+        <label class="character-option">
+          <input type="radio" name="characterMode" value="library" checked>
+          <div class="character-option-content">
+            <strong>Character Library</strong>
+            <p>Use your saved StoryForge characters.</p>
+          </div>
+        </label>
+
+        <label class="character-option">
+          <input type="radio" name="characterMode" value="new">
+          <div class="character-option-content">
+            <strong>Create New Characters</strong>
+            <p>Design new characters for this adventure.</p>
+          </div>
+        </label>
+
+        <label class="character-option">
+          <input type="radio" name="characterMode" value="automatic">
+          <div class="character-option-content">
+            <strong>Automatic Casting</strong>
+            <p>Let the story configuration determine the cast.</p>
+          </div>
+        </label>
+
+      </div>
+
+      <a href="/characters.html" class="library-link">
+        OPEN CHARACTER LIBRARY ↗
+      </a>
+    </section>
+
+    <!-- VIDEO STYLE -->
+
+    <section class="studio-card">
+      <div class="card-heading">
+        <span class="step-number">04</span>
+        <div>
+          <h2>Cinematic Style</h2>
+          <p>Choose the visual direction of your video.</p>
+        </div>
+      </div>
+
+      <div class="settings-grid">
+
+        <div class="setting-field">
+          <label for="visualStyle">VISUAL STYLE</label>
+          <select id="visualStyle" name="visualStyle">
+            <option value="Roblox Cinematic">Roblox Cinematic</option>
+            <option value="Anime Inspired">Anime Inspired</option>
+            <option value="Cartoon">Cartoon</option>
+            <option value="Realistic Cinematic">Realistic Cinematic</option>
+            <option value="Fantasy Cinematic">Fantasy Cinematic</option>
+          </select>
+        </div>
+
+        <div class="setting-field">
+          <label for="cameraStyle">CAMERA STYLE</label>
+          <select id="cameraStyle" name="cameraStyle">
+            <option value="Dynamic">Dynamic Camera</option>
+            <option value="Cinematic">Cinematic Camera</option>
+            <option value="First Person">First Person</option>
+            <option value="Third Person">Third Person</option>
+            <option value="Fixed Shots">Fixed Shots</option>
+          </select>
+        </div>
+
+        <div class="setting-field">
+          <label for="duration">VIDEO DURATION</label>
+          <select id="duration" name="duration">
+            <option value="30">30 Seconds</option>
+            <option value="60" selected>1 Minute</option>
+            <option value="120">2 Minutes</option>
+            <option value="180">3 Minutes</option>
+            <option value="300">5 Minutes</option>
+          </select>
+        </div>
+
+        <div class="setting-field">
+          <label for="quality">PRODUCTION QUALITY</label>
+          <select id="quality" name="quality">
+            <option value="Standard">Standard</option>
+            <option value="High" selected>High</option>
+            <option value="Ultra">Ultra</option>
+          </select>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- AUDIO -->
+
+    <section class="studio-card">
+      <div class="card-heading">
+        <span class="step-number">05</span>
+        <div>
+          <h2>Audio & Sound</h2>
+          <p>Configure the sound of your cinematic.</p>
+        </div>
+      </div>
+
+      <div class="audio-grid">
+
+        <label class="toggle-option">
+          <span>
+            <strong>Background Music</strong>
+            <small>Music throughout the video</small>
+          </span>
+          <input type="checkbox" name="backgroundMusic" checked>
+        </label>
+
+        <label class="toggle-option">
+          <span>
+            <strong>Sound Effects</strong>
+            <small>Environmental and action sounds</small>
+          </span>
+          <input type="checkbox" name="soundEffects" checked>
+        </label>
+
+        <label class="toggle-option">
+          <span>
+            <strong>Voice Narration</strong>
+            <small>Narrator for your story</small>
+          </span>
+          <input type="checkbox" name="voiceNarration">
+        </label>
+
+        <label class="toggle-option">
+          <span>
+            <strong>Character Dialogue</strong>
+            <small>Characters speaking</small>
+          </span>
+          <input type="checkbox" name="characterDialogue" checked>
+        </label>
+
+      </div>
+    </section>
+
+    <!-- FINAL ACTION -->
+
+    <section class="studio-submit">
+      <div class="submit-info">
+        <span class="submit-indicator"></span>
+        <div>
+          <strong>READY TO CREATE</strong>
+          <p>Your story configuration is ready.</p>
+        </div>
+      </div>
+
+      <button type="submit" id="createStoryBtn">
+        <span>BUILD MY STORY</span>
+        <span class="submit-arrow">→</span>
+      </button>
+    </section>
+
+  </form>
+
+</main>
+
+<script src="/studio.js"></script>
+</body>
+            </html>
+            
