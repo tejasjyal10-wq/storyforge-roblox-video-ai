@@ -1,9 +1,9 @@
 
 'use strict';
 
-const { AgentRegistry } = require('./agent-registry');
-const { PipelineEngine } = require('./pipeline-engine');
-const { JobManager } = require('./job-manager');
+const JobManager = require('./job-manager');
+const AgentRegistry = require('./agent-registry');
+const PipelineEngine = require('./pipeline-engine');
 const { createStoryDirector } = require('../agents/story-director');
 
 function createStoryDirectorIntegration() {
