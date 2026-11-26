@@ -8,6 +8,12 @@ const app = express();
 const PORT = process.env.PORT || 10000;
 
 const publicDir = path.join(__dirname, 'public');
+const fs = require('fs');
+
+console.log('SERVER DIRECTORY:', __dirname);
+console.log('PUBLIC DIRECTORY:', publicDir);
+console.log('PUBLIC FILES:', fs.existsSync(publicDir) ? fs.readdirSync(publicDir) : 'PUBLIC FOLDER MISSING');
+console.log('PRODUCTION FILE EXISTS:', fs.existsSync(path.join(publicDir, 'production.html')));
 
 // Middleware
 app.use(cors());
