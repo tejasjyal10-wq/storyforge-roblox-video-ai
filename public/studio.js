@@ -1,16 +1,19 @@
+
+'use strict';
+
 document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("studioForm");
   const storyIdea = document.getElementById("storyIdea");
   const characterCount = document.getElementById("characterCount");
   const createStoryBtn = document.getElementById("createStoryBtn");
 
-  const DRAFT_KEY = "storyforge_studio_draft";
+  const DRAFT_KEY = "storyforge_studio_settings";
   const CONFIG_KEY = "storyforge_config";
 
-  if (!form) return;
+  if (!form || !storyIdea || !createStoryBtn) return;
 
   // -----------------------------------------
-  // GET FORM VALUES
+  // FORM HELPERS
   // -----------------------------------------
 
   function getSelectedValue(name, fallback = "") {
@@ -31,7 +34,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function getGenres() {
     const mainGenre = getSelectedValue("genre", "Adventure");
-
     const customInput = document.getElementById("customGenres");
 
     const extraGenres = customInput
@@ -49,21 +51,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // -----------------------------------------
 
   function updateCharacterCount() {
-    if (!storyIdea || !characterCount) return;
-
-    const count = storyIdea.value.length;
-
-    characterCount.textContent = `${count} characters`;
+    characterCount.textContent =
+      `${storyIdea.value.length} characters`;
   }
 
   // -----------------------------------------
-  // SAVE STUDIO DRAFT
+  // SAVE SETTINGS ONLY
+  // The story prompt is NOT saved as a draft.
   // -----------------------------------------
 
-  function getStudioDraft() {
+  function getStudioSettings() {
     return {
-      storyIdea: storyIdea.value,
-
       genre: getSelectedValue("genre", "Adventure"),
 
       customGenres:
@@ -89,40 +87,43 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  function saveDraft() {
+  function saveSettings() {
     try {
       localStorage.setItem(
         DRAFT_KEY,
-        JSON.stringify(getStudioDraft())
+        JSON.stringify(getStudioSettings())
       );
     } catch (error) {
-      console.warn("Could not save Studio draft:", error);
+      console.warn("Could not save Studio settings:", error);
     }
   }
 
   // -----------------------------------------
-  // RESTORE PREVIOUS STUDIO SETTINGS
+  // RESTORE SETTINGS
+  // Never restore an old story prompt.
   // -----------------------------------------
 
-  function restoreDraft() {
-    let draft;
+  function restoreSettings() {
+    let settings;
 
     try {
-      draft = JSON.parse(localStorage.getItem(DRAFT_KEY));
+      settings = JSON.parse(localStorage.getItem(DRAFT_KEY));
     } catch (error) {
-      console.warn("Could not restore Studio draft:", error);
+      console.warn("Could not restore Studio settings:", error);
       return;
     }
 
-    if (!draft) return;
+    // Always start with a blank story prompt.
+    storyIdea.value = "";
 
-    if (storyIdea && typeof draft.storyIdea === "string") {
-      storyIdea.value = draft.storyIdea;
+    if (!settings) {
+      updateCharacterCount();
+      return;
     }
 
-    if (draft.genre) {
+    if (settings.genre) {
       const genreRadio = form.querySelector(
-        `input[name="genre"][value="${CSS.escape(draft.genre)}"]`
+        `input[name="genre"][value="${CSS.escape(settings.genre)}"]`
       );
 
       if (genreRadio) genreRadio.checked = true;
@@ -130,28 +131,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const customGenres = document.getElementById("customGenres");
 
-    if (customGenres && typeof draft.customGenres === "string") {
-      customGenres.value = draft.customGenres;
+    if (customGenres && typeof settings.customGenres === "string") {
+      customGenres.value = settings.customGenres;
     }
 
-    if (draft.characterMode) {
+    if (settings.characterMode) {
       const characterRadio = form.querySelector(
-        `input[name="characterMode"][value="${CSS.escape(draft.characterMode)}"]`
+        `input[name="characterMode"][value="${CSS.escape(settings.characterMode)}"]`
       );
 
       if (characterRadio) characterRadio.checked = true;
     }
 
-    if (draft.visualStyle) {
-      document.getElementById("visualStyle").value = draft.visualStyle;
+    if (settings.visualStyle) {
+      document.getElementById("visualStyle").value =
+        settings.visualStyle;
     }
 
-    if (draft.duration) {
-      document.getElementById("duration").value = draft.duration;
+    if (settings.duration) {
+      document.getElementById("duration").value =
+        settings.duration;
     }
 
-    if (draft.quality) {
-      document.getElementById("quality").value = draft.quality;
+    if (settings.quality) {
+      document.getElementById("quality").value =
+        settings.quality;
     }
 
     const audioSettings = [
@@ -166,8 +170,8 @@ document.addEventListener("DOMContentLoaded", () => {
         `input[name="${name}"]`
       );
 
-      if (checkbox && typeof draft[name] === "boolean") {
-        checkbox.checked = draft[name];
+      if (checkbox && typeof settings[name] === "boolean") {
+        checkbox.checked = settings[name];
       }
     });
 
@@ -175,18 +179,22 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -----------------------------------------
-  // AUTO-SAVE WHEN ANYTHING CHANGES
+  // AUTO-SAVE SETTINGS
+  // Prompt text is deliberately excluded.
   // -----------------------------------------
 
   form.addEventListener("input", () => {
     updateCharacterCount();
-    saveDraft();
+    saveSettings();
   });
 
-  form.addEventListener("change", saveDraft);
+  form.addEventListener("change", saveSettings);
 
-  // Restore before saving any new draft.
-  restoreDraft();
+  // -----------------------------------------
+  // INITIALIZE
+  // -----------------------------------------
+
+  restoreSettings();
   updateCharacterCount();
 
   // -----------------------------------------
@@ -241,16 +249,11 @@ document.addEventListener("DOMContentLoaded", () => {
       status: "ready"
     };
 
-    // Save the complete configuration for Production.
+    // Save the current story for Production.
     try {
       sessionStorage.setItem(
         CONFIG_KEY,
         JSON.stringify(configuration)
-      );
-
-      localStorage.setItem(
-        DRAFT_KEY,
-        JSON.stringify(getStudioDraft())
       );
     } catch (error) {
       console.error("Could not save story configuration:", error);
@@ -258,7 +261,10 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // Prevent accidental double-clicking.
+    // Save settings, but never save the prompt.
+    saveSettings();
+
+    // Prevent accidental double-clicks.
     createStoryBtn.disabled = true;
     createStoryBtn.style.opacity = "0.7";
 
@@ -268,10 +274,9 @@ document.addEventListener("DOMContentLoaded", () => {
       buttonText.textContent = "OPENING PRODUCTION...";
     }
 
-    // Go to the Production page.
+    // Open Production.
     window.location.href = "/production.html";
   });
 
   console.log("StoryForge Studio initialized successfully.");
 });
-
