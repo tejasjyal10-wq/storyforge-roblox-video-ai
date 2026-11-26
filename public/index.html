@@ -1,0 +1,78 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>StoryForge — Your Story. Your World.</title>
+  <meta name="description" content="Create cinematic Roblox stories with StoryForge AI.">
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <main class="hero">
+    <div class="background"></div>
+    <div class="overlay"></div>
+    <div class="particles"></div>
+
+    <header class="navbar">
+      <a href="/" class="logo">S<span>F</span> STORYFORGE</a>
+      <nav>
+        <a href="#studio">STUDIO</a>
+        <a href="#characters">CHARACTERS</a>
+        <a href="#projects">PROJECTS</a>
+      </nav>
+      <button class="menu" aria-label="Menu">☰</button>
+    </header>
+
+    <section class="content" id="studio">
+      <p class="eyebrow">YOUR STORY. YOUR WORLD.</p>
+
+      <h1>STORY<span>FORGE</span></h1>
+
+      <p class="description">
+        Transform your imagination into cinematic worlds.
+        Create stories, build characters, and bring your vision to life.
+      </p>
+
+      <a href="#create" class="cta">
+        <span>CREATE YOUR STORY</span>
+        <span>↗</span>
+      </a>
+    </section>
+
+    <div class="side-label">STORYFORGE · AI STORY PRODUCTION</div>
+
+    <footer class="footer">
+      <span>CREATE · DREAM · EXPLORE</span>
+      <a href="#create">↓ SCROLL TO BEGIN</a>
+      <span>01 — EXPERIENCE</span>
+    </footer>
+  </main>
+
+  <section class="create-section" id="create">
+    <div class="create-inner">
+      <p class="eyebrow">THE BEGINNING OF SOMETHING</p>
+      <h2>WHAT'S YOUR <span>STORY?</span></h2>
+      <p>Every world begins with an idea.</p>
+
+      <form id="storyForm">
+        <textarea
+          id="storyIdea"
+          placeholder="Imagine a story where..."
+          required
+        ></textarea>
+
+        <button type="submit" id="createBtn">
+          <span>START CREATING</span>
+          <span>↗</span>
+        </button>
+      </form>
+
+      <div id="storyResult" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <script src="/script.js"></script>
+</body>
+          </html>
+          
