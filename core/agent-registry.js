@@ -1,4 +1,3 @@
-
 'use strict';
 
 class AgentRegistry {
@@ -24,7 +23,10 @@ class AgentRegistry {
       name: agent.name || id,
       description: agent.description || '',
       version: agent.version || '1.0.0',
-      run: agent.run,
+
+      // Preserve the original agent's this context
+      run: (...args) => agent.run(...args),
+
       registeredAt: Date.now()
     };
 
