@@ -1,77 +1,650 @@
 
-'use strict';
+/* STORYFORGE STUDIO */
 
-document.addEventListener('DOMContentLoaded', () => {
-  const form = document.getElementById('studioForm');
-  const storyIdea = document.getElementById('storyIdea');
-  const characterCount = document.getElementById('characterCount');
-  const createStoryBtn = document.getElementById('createStoryBtn');
+:root {
+  --bg: #080809;
+  --panel: #111113;
+  --border: rgba(255,255,255,.09);
+  --red: #ef3535;
+  --red-light: #ff5959;
+  --text: #f5f5f5;
+  --muted: #92929a;
+}
 
-  // Character counter
-  storyIdea.addEventListener('input', () => {
-    const count = storyIdea.value.length;
-    characterCount.textContent = `${count} characters`;
-  });
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
 
-  // Genre card interaction
-  document.querySelectorAll('.genre-option').forEach(option => {
-    option.addEventListener('click', () => {
-      document.querySelectorAll('.genre-option').forEach(card => {
-        card.classList.remove('genre-active');
-      });
+body {
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: Arial, Helvetica, sans-serif;
+  overflow-x: hidden;
+}
 
-      option.classList.add('genre-active');
-    });
-  });
+.studio-background {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 80% 10%, rgba(150,0,0,.15), transparent 40%),
+    radial-gradient(circle at 10% 70%, rgba(100,0,0,.1), transparent 40%);
+}
 
-  // Form submission
-  form.addEventListener('submit', async (event) => {
-    event.preventDefault();
+/* HEADER */
 
-    const formData = new FormData(form);
+.studio-header {
+  position: relative;
+  z-index: 5;
+  height: 75px;
+  padding: 0 6%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(8,8,9,.92);
+  border-bottom: 1px solid var(--border);
+}
 
-    const storyConfig = {
-      storyIdea: formData.get('storyIdea'),
-      genre: formData.get('genre'),
-      characterMode: formData.get('characterMode'),
-      visualStyle: formData.get('visualStyle'),
-      cameraStyle: formData.get('cameraStyle'),
-      duration: formData.get('duration'),
-      quality: formData.get('quality'),
-      audio: {
-        backgroundMusic: formData.has('backgroundMusic'),
-        soundEffects: formData.has('soundEffects'),
-        voiceNarration: formData.has('voiceNarration'),
-        characterDialogue: formData.has('characterDialogue')
-      }
-    };
+.studio-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  text-decoration: none;
+  font-weight: 900;
+  letter-spacing: 3px;
+  font-size: 13px;
+}
 
-    if (!storyConfig.storyIdea.trim()) {
-      alert('Please enter your story idea first.');
-      return;
-    }
+.logo-symbol {
+  color: var(--red);
+  font-size: 26px;
+}
 
-    createStoryBtn.disabled = true;
-    createStoryBtn.innerHTML = '<span>PREPARING STORY...</span>';
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
 
-    try {
-      sessionStorage.setItem(
-        'storyforge_config',
-        JSON.stringify(storyConfig)
-      );
+.studio-status {
+  color: #78d69a;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
 
-      window.location.href = '/production.html';
+.home-link {
+  text-decoration: none;
+  color: #aaa;
+  font-size: 11px;
+}
 
-    } catch (error) {
-      console.error('StoryForge error:', error);
-      alert('Something went wrong while preparing your story.');
+/* PAGE */
 
-      createStoryBtn.disabled = false;
-      createStoryBtn.innerHTML =
-        '<span>BUILD MY STORY</span><span class="submit-arrow">→</span>';
-    }
-  });
+.studio-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1000px;
+  margin: auto;
+  padding: 60px 24px 80px;
+}
 
-  console.log('StoryForge Studio initialized.');
-});
-          
+.studio-intro {
+  text-align: center;
+  margin-bottom: 45px;
+}
+
+.studio-eyebrow {
+  color: var(--red);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  margin-bottom: 15px;
+}
+
+.studio-intro h1 {
+  font-size: clamp(34px, 6vw, 65px);
+  font-weight: 900;
+  letter-spacing: -3px;
+}
+
+.studio-intro h1 span {
+  color: var(--red);
+}
+
+.studio-intro > p {
+  color: var(--muted);
+  margin-top: 15px;
+  font-size: 14px;
+}
+
+/* CARDS */
+
+.studio-card {
+  background: linear-gradient(145deg, #151517, #0e0e10);
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  padding: 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 12px 40px rgba(0,0,0,.2);
+}
+
+.card-heading {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 28px;
+}
+
+.step-number {
+  width: 45px;
+  height: 45px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(239,53,53,.35);
+  background: rgba(239,53,53,.08);
+  color: var(--red-light);
+  font-weight: bold;
+  font-size: 12px;
+}
+
+.card-heading h2 {
+  font-size: 18px;
+  margin-bottom: 6px;
+}
+
+.card-heading p {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* STORY INPUT */
+
+.studio-card > label {
+  display: block;
+  color: #aaa;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-bottom: 12px;
+}
+
+#storyIdea {
+  width: 100%;
+  min-height: 160px;
+  resize: vertical;
+  border: 1px solid #2b2b30;
+  background: #09090b;
+  color: white;
+  border-radius: 12px;
+  padding: 18px;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.7;
+  outline: none;
+}
+
+#storyIdea:focus {
+  border-color: rgba(239,53,53,.6);
+  box-shadow: 0 0 0 3px rgba(239,53,53,.08);
+}
+
+#storyIdea::placeholder {
+  color: #55555c;
+}
+
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: 12px;
+  color: #65656c;
+  font-size: 10px;
+}
+
+/* GENRE */
+
+.genre-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0,1fr));
+  gap: 12px;
+}
+
+.genre-option {
+  cursor: pointer;
+}
+
+.genre-option input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.genre-content {
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: #0b0b0d;
+  border: 1px solid #26262b;
+  border-radius: 12px;
+  transition: .2s;
+}
+
+.genre-icon {
+  font-size: 25px;
+}
+
+.genre-content strong {
+  font-size: 12px;
+  color: #bdbdc3;
+}
+
+.genre-option input:checked + .genre-content {
+  border-color: var(--red);
+  background: rgba(239,53,53,.08);
+  box-shadow: 0 0 20px rgba(239,53,53,.06);
+}
+
+.genre-option input:checked + .genre-content strong {
+  color: white;
+}
+
+/* CHARACTERS */
+
+.character-options {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.character-option {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px;
+  background: #0b0b0d;
+  border: 1px solid #28282d;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+.character-option input {
+  accent-color: var(--red);
+  flex-shrink: 0;
+}
+
+.character-option:has(input:checked) {
+  border-color: rgba(239,53,53,.6);
+  background: rgba(239,53,53,.06);
+}
+
+.character-option-content strong {
+  font-size: 13px;
+}
+
+.character-option-content p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+  margin-top: 6px;
+}
+
+.library-link {
+  display: inline-block;
+  margin-top: 22px;
+  color: var(--red-light);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 1.5px;
+  text-decoration: none;
+}
+
+/* SETTINGS */
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 18px;
+}
+
+.setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.setting-field label {
+  color: #a0a0a6;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+}
+
+.setting-field select {
+  width: 100%;
+  min-height: 48px;
+  background: #0b0b0d;
+  color: white;
+  border: 1px solid #29292e;
+  border-radius: 9px;
+  padding: 0 12px;
+  font-size: 12px;
+}
+
+.setting-field select:focus {
+  border-color: var(--red);
+}
+
+/* AUDIO */
+
+.audio-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0,1fr));
+  gap: 12px;
+}
+
+.toggle-option {
+  min-height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: #0b0b0d;
+  border: 1px solid #28282d;
+  border-radius: 12px;
+  padding: 16px;
+}
+
+.toggle-option strong {
+  display: block;
+  font-size: 12px;
+}
+
+.toggle-option small {
+  display: block;
+  color: var(--muted);
+  font-size: 10px;
+  margin-top: 6px;
+}
+
+.toggle-option input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--red);
+  flex-shrink: 0;
+}
+
+/* CREATE BUTTON */
+
+.studio-submit {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 25px;
+  background: linear-gradient(120deg, rgba(100,0,0,.12), #111113);
+  border: 1px solid rgba(239,53,53,.2);
+  border-radius: 16px;
+  padding: 24px;
+}
+
+.submit-info {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+
+.submit-indicator {
+  width: 10px;
+  height: 10px;
+  background: #6fd393;
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(111,211,147,.5);
+}
+
+.submit-info strong {
+  font-size: 11px;
+  letter-spacing: 1px;
+}
+
+.submit-info p {
+  color: var(--muted);
+  font-size: 11px;
+  margin-top: 5px;
+}
+
+#createStoryBtn {
+  border: none;
+  background: linear-gradient(135deg, #c92424, #ff4444);
+  color: white;
+  min-height: 55px;
+  padding: 0 23px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+#createStoryBtn:hover {
+  box-shadow: 0 8px 25px rgba(239,53,53,.25);
+}
+
+#createStoryBtn:disabled {
+  opacity: .6;
+  cursor: wait;
+}
+
+.submit-arrow {
+  font-size: 20px;
+}
+
+/* TABLET */
+
+@media (max-width: 800px) {
+  .studio-container {
+    padding: 45px 20px 65px;
+  }
+
+  .studio-card {
+    padding: 24px;
+  }
+
+  .genre-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+  }
+}
+
+/* PORTRAIT */
+
+@media (orientation: portrait), (max-width: 600px) {
+  .studio-header {
+    height: 62px;
+    padding: 0 15px;
+  }
+
+  .studio-logo {
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .logo-symbol {
+    font-size: 22px;
+  }
+
+  .header-right {
+    gap: 12px;
+  }
+
+  .studio-status {
+    font-size: 8px;
+    letter-spacing: .5px;
+  }
+
+  .home-link {
+    font-size: 9px;
+  }
+
+  .studio-container {
+    padding: 35px 13px 50px;
+  }
+
+  .studio-intro {
+    margin-bottom: 28px;
+  }
+
+  .studio-eyebrow {
+    font-size: 8px;
+    letter-spacing: 2px;
+  }
+
+  .studio-intro h1 {
+    font-size: 35px;
+    letter-spacing: -1.8px;
+  }
+
+  .studio-intro > p {
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .studio-card {
+    padding: 19px 15px;
+    border-radius: 13px;
+  }
+
+  .card-heading {
+    gap: 12px;
+    margin-bottom: 22px;
+  }
+
+  .step-number {
+    width: 37px;
+    height: 37px;
+    font-size: 10px;
+  }
+
+  .card-heading h2 {
+    font-size: 15px;
+  }
+
+  .card-heading p {
+    font-size: 10px;
+    line-height: 1.5;
+  }
+
+  #storyIdea {
+    min-height: 140px;
+    font-size: 12px;
+    padding: 13px;
+  }
+
+  .input-footer {
+    font-size: 9px;
+  }
+
+  .genre-grid {
+    grid-template-columns: repeat(2, minmax(0,1fr));
+    gap: 9px;
+  }
+
+  .genre-content {
+    min-height: 95px;
+  }
+
+  .genre-icon {
+    font-size: 21px;
+  }
+
+  .genre-content strong {
+    font-size: 11px;
+  }
+
+  .character-option {
+    padding: 14px 12px;
+    gap: 11px;
+  }
+
+  .character-option-content strong {
+    font-size: 11px;
+  }
+
+  .character-option-content p {
+    font-size: 9px;
+  }
+
+  .settings-grid,
+  .audio-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .setting-field select {
+    min-height: 45px;
+    font-size: 12px;
+  }
+
+  .toggle-option {
+    min-height: 75px;
+    padding: 13px;
+  }
+
+  .toggle-option strong {
+    font-size: 11px;
+  }
+
+  .toggle-option small {
+    font-size: 9px;
+  }
+
+  .studio-submit {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 17px;
+    gap: 18px;
+  }
+
+  #createStoryBtn {
+    width: 100%;
+    min-height: 52px;
+    font-size: 10px;
+  }
+}
+
+/* SMALL PHONES */
+
+@media (max-width: 360px) {
+  .studio-intro h1 {
+    font-size: 29px;
+  }
+
+  .studio-card {
+    padding: 16px 12px;
+  }
+
+  .genre-content {
+    min-height: 85px;
+  }
+}
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition: none !important;
+    animation: none !important;
+  }
+}
