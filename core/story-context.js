@@ -30,7 +30,6 @@ class StoryContext {
       ...metadata
     };
 
-    // Preserve the original user input.
     this.originalPrompt = String(prompt);
 
     this.requirements = {
@@ -41,7 +40,6 @@ class StoryContext {
       ? [...restrictions]
       : [];
 
-    // Shared outputs used by Phase 1 agents.
     this.story = {
       direction: null,
       logline: null,
@@ -53,6 +51,7 @@ class StoryContext {
 
     this.scenes = [];
     this.characters = [];
+
     this.world = {
       description: null,
       locations: [],
@@ -75,6 +74,7 @@ class StoryContext {
     };
 
     this.agentRecords = [];
+
     this.validation = {
       status: 'pending',
       errors: [],
@@ -114,8 +114,13 @@ class StoryContext {
   }
 
   addRestriction(restriction) {
-    if (typeof restriction !== 'string' || !restriction.trim()) {
-      throw new TypeError('Restriction must be a non-empty string.');
+    if (
+      typeof restriction !== 'string' ||
+      !restriction.trim()
+    ) {
+      throw new TypeError(
+        'Restriction must be a non-empty string.'
+      );
     }
 
     if (!this.restrictions.includes(restriction)) {
@@ -192,7 +197,8 @@ class StoryContext {
       stage: record.stage || null,
       status: record.status || 'unknown',
       startedAt: record.startedAt || null,
-      completedAt: record.completedAt || new Date().toISOString(),
+      completedAt:
+        record.completedAt || new Date().toISOString(),
       durationMs: record.durationMs ?? null,
       error: record.error || null,
       outputSummary: record.outputSummary || null
@@ -207,8 +213,12 @@ class StoryContext {
   setValidation(result = {}) {
     this.validation = {
       status: result.status || 'pending',
-      errors: Array.isArray(result.errors) ? [...result.errors] : [],
-      warnings: Array.isArray(result.warnings) ? [...result.warnings] : [],
+      errors: Array.isArray(result.errors)
+        ? [...result.errors]
+        : [],
+      warnings: Array.isArray(result.warnings)
+        ? [...result.warnings]
+        : [],
       lastCheckedAt: new Date().toISOString()
     };
 
@@ -217,8 +227,13 @@ class StoryContext {
   }
 
   setStatus(status) {
-    if (typeof status !== 'string' || !status.trim()) {
-      throw new TypeError('Status must be a non-empty string.');
+    if (
+      typeof status !== 'string' ||
+      !status.trim()
+    ) {
+      throw new TypeError(
+        'Status must be a non-empty string.'
+      );
     }
 
     this.status = status;
@@ -228,16 +243,28 @@ class StoryContext {
 
   getSection(section) {
     if (!(section in this)) {
-      throw new Error(`Unknown story context section: ${section}`);
+      throw new Error(
+        `Unknown story context section: ${section}`
+      );
     }
 
     return this.clone(this[section]);
   }
 
+  // FIX:
+  // Build a plain data object instead of cloning the class instance.
+  // This prevents JSON.stringify from calling toJSON recursively.
   snapshot() {
-    return this.clone(this);
+    const data = {};
+
+    for (const key of Object.keys(this)) {
+      data[key] = this.clone(this[key]);
+    }
+
+    return data;
   }
 
+  // JSON serialization now safely returns plain data.
   toJSON() {
     return this.snapshot();
   }
@@ -248,12 +275,18 @@ class StoryContext {
   }
 
   clone(value) {
+    if (value === undefined) {
+      return undefined;
+    }
+
     return JSON.parse(JSON.stringify(value));
   }
 
   static fromJSON(data) {
     if (!data || typeof data !== 'object') {
-      throw new TypeError('Story context data must be an object.');
+      throw new TypeError(
+        'Story context data must be an object.'
+      );
     }
 
     const context = new StoryContext({
@@ -272,4 +305,4 @@ class StoryContext {
 }
 
 module.exports = StoryContext;
-        
+    
