@@ -1,4 +1,3 @@
-
 'use strict';
 
 const express = require('express');
@@ -10,68 +9,24 @@ const PORT = process.env.PORT || 10000;
 
 const publicDir = path.join(__dirname, 'public');
 
+// Middleware
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 
-// Serve homepage and frontend assets
+// Serve frontend files
 app.use(express.static(publicDir));
 
-// Explicit homepage route
-app.get('/', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
-});
-// Explicit Studio and Production routes
-app.get('/studio.html', (req, res) => {
-  res.sendFile(path.join(publicDir, 'studio.html'));
-});
+// Import routers
+const pagesRouter = require('./routes/pages');
+const healthRouter = require('./routes/health');
+const apiRouter = require('./routes/api');
+const storyRouter = require('./routes/story');
 
-app.get('/production.html', (req, res) => {
-  res.sendFile(path.join(publicDir, 'production.html'));
-});
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({
-    success: true,
-    status: 'online',
-    service: 'StoryForge',
-    timestamp: new Date().toISOString()
-  });
-});
-
-// API information
-app.get('/api', (req, res) => {
-  res.json({
-    success: true,
-    name: 'StoryForge API',
-    version: '1.0.0',
-    status: 'running'
-  });
-});
-
-// Story creation endpoint
-app.post('/api/story-director', async (req, res) => {
-  try {
-    const idea = String(req.body?.idea || '').trim();
-
-    if (!idea) {
-      return res.status(400).json({
-        success: false,
-        error: 'A story idea is required.'
-      });
-    }
-
-    res.json({
-      success: true,
-      message: 'Story idea received.',
-      idea
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: 'Story creation failed.'
-    });
-  }
-});
+// Connect routers
+app.use('/', pagesRouter);
+app.use('/api', healthRouter);
+app.use('/api', apiRouter);
+app.use('/api/story-director', storyRouter);
 
 // 404 handler
 app.use((req, res) => {
@@ -82,6 +37,7 @@ app.use((req, res) => {
   });
 });
 
+// Start server
 if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`StoryForge running on port ${PORT}`);
