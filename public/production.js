@@ -3,42 +3,17 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   // =========================================================
-  // STORAGE
+  // STORYFORGE PRODUCTION STUDIO
   // =========================================================
 
-  const SCENE_STORAGE_KEY = 'storyforge_production_scenes';
   const CONFIG_STORAGE_KEY = 'storyforge_config';
+  const LEGACY_SCENE_KEY = 'storyforge_production_scenes';
+  const PROJECT_SCENE_PREFIX = 'storyforge_production_scenes_';
 
+  let currentProjectId = 'default_project';
+  let projectConfig = null;
   let scenes = [];
   let selectedSceneId = null;
-
-  const loadScenes = () => {
-    try {
-      const saved = localStorage.getItem(SCENE_STORAGE_KEY);
-      scenes = saved ? JSON.parse(saved) : [];
-
-      if (!Array.isArray(scenes)) {
-        scenes = [];
-      }
-    } catch (error) {
-      scenes = [];
-      console.error('Could not load scenes:', error);
-    }
-  };
-
-  const persistScenes = () => {
-    try {
-      localStorage.setItem(SCENE_STORAGE_KEY, JSON.stringify(scenes));
-      return true;
-    } catch (error) {
-      console.error('Could not save scenes:', error);
-      alert('Scenes could not be saved in this browser.');
-      return false;
-    }
-  };
-
-  const createId = () =>
-    'scene_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
 
   // =========================================================
   // ELEMENTS
@@ -49,7 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const sceneTimeline = document.getElementById('sceneTimeline');
 
   const addSceneBtn = document.getElementById('addSceneBtn');
-
   const emptyPanel = document.getElementById('sceneDetailEmpty');
   const editorForm = document.getElementById('sceneEditorForm');
 
@@ -70,23 +44,171 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   // =========================================================
+  // PROJECT STORAGE
+  // =========================================================
+
+  const getProjectSceneKey = () => {
+    return PROJECT_SCENE_PREFIX + currentProjectId;
+  };
+
+  const createId = () => {
+    return 'scene_' + Date.now() + '_' +
+      Math.random().toString(36).slice(2, 8);
+  };
+
+  const getScene = id => scenes.find(scene => scene.id === id);
+
+  const getSceneNumber = id =>
+    scenes.findIndex(scene => scene.id === id) + 1;
+
+  const loadConfiguration = () => {
+    try {
+      const saved = sessionStorage.getItem(CONFIG_STORAGE_KEY);
+
+      projectConfig = saved ? JSON.parse(saved) : null;
+
+      if (projectConfig && projectConfig.id) {
+        currentProjectId = String(projectConfig.id);
+      }
+    } catch (error) {
+      projectConfig = null;
+      console.error('Could not load project configuration:', error);
+    }
+
+    renderConfiguration();
+  };
+
+  const loadScenes = () => {
+    try {
+      const projectKey = getProjectSceneKey();
+      const projectSaved = localStorage.getItem(projectKey);
+
+      if (projectSaved !== null) {
+        scenes = JSON.parse(projectSaved);
+      } else {
+        // Migrate scenes from the previous shared storage key.
+        const legacySaved = localStorage.getItem(LEGACY_SCENE_KEY);
+
+        if (legacySaved !== null) {
+          scenes = JSON.parse(legacySaved);
+
+          if (!Array.isArray(scenes)) {
+            scenes = [];
+          }
+
+          localStorage.setItem(projectKey, JSON.stringify(scenes));
+        } else {
+          scenes = [];
+        }
+      }
+
+      if (!Array.isArray(scenes)) {
+        scenes = [];
+      }
+    } catch (error) {
+      scenes = [];
+      console.error('Could not load scenes:', error);
+    }
+  };
+
+  const persistScenes = () => {
+    try {
+      localStorage.setItem(
+        getProjectSceneKey(),
+        JSON.stringify(scenes)
+      );
+
+      return true;
+    } catch (error) {
+      console.error('Could not save scenes:', error);
+      alert('Scenes could not be saved in this browser.');
+      return false;
+    }
+  };
+
+  // =========================================================
+  // CONFIGURATION DISPLAY
+  // =========================================================
+
+  const renderConfiguration = () => {
+    const configDisplay = document.getElementById('productionConfig');
+
+    if (configDisplay) {
+      configDisplay.textContent = projectConfig
+        ? JSON.stringify(projectConfig, null, 2)
+        : 'No project configuration loaded.';
+    }
+
+    const storyIdea = document.getElementById('productionStoryIdea');
+
+    if (storyIdea) {
+      storyIdea.textContent =
+        projectConfig?.storyIdea ||
+        projectConfig?.idea ||
+        projectConfig?.prompt ||
+        'No story idea saved.';
+    }
+
+    const genreDisplay = document.getElementById('productionGenres');
+
+    if (genreDisplay) {
+      const genres = projectConfig?.genres ||
+        projectConfig?.genre ||
+        [];
+
+      genreDisplay.textContent = Array.isArray(genres)
+        ? genres.join(', ')
+        : String(genres || 'Not specified');
+    }
+
+    const projectName = document.getElementById('productionProjectName');
+
+    if (projectName) {
+      projectName.textContent =
+        projectConfig?.storyIdea
+          ? projectConfig.storyIdea.substring(0, 60)
+          : 'Untitled Story';
+    }
+
+    const visualStyle = document.getElementById('productionVisualStyle');
+
+    if (visualStyle) {
+      visualStyle.textContent =
+        projectConfig?.visualStyle || 'Not specified';
+    }
+
+    const qualityDisplay = document.getElementById('productionQuality');
+
+    if (qualityDisplay) {
+      qualityDisplay.textContent =
+        projectConfig?.quality || 'Not specified';
+    }
+
+    const durationDisplay = document.getElementById('productionDuration');
+
+    if (durationDisplay) {
+      durationDisplay.textContent =
+        projectConfig?.duration
+          ? projectConfig.duration + ' seconds'
+          : 'Not specified';
+    }
+  };
+
+  // =========================================================
   // HELPERS
   // =========================================================
 
-  const getScene = (id) => scenes.find(scene => scene.id === id);
-
-  const getSceneNumber = (id) => scenes.findIndex(scene => scene.id === id) + 1;
-
-  const getFieldValue = (field) => field ? field.value.trim() : '';
-
-  const setFieldValue = (field, value) => {
-    if (field) field.value = value ?? '';
-  };
-
-  const escapeText = (value) => {
+  const escapeText = value => {
     const div = document.createElement('div');
     div.textContent = String(value ?? '');
     return div.innerHTML;
+  };
+
+  const getFieldValue = field =>
+    field ? field.value.trim() : '';
+
+  const setFieldValue = (field, value) => {
+    if (field) field.value = value ?? '';
   };
 
   const updateSceneCount = () => {
@@ -117,7 +239,9 @@ document.addEventListener('DOMContentLoaded', () => {
   // =========================================================
 
   const clearEditor = () => {
-    Object.values(fields).forEach(field => setFieldValue(field, ''));
+    Object.values(fields).forEach(field => {
+      setFieldValue(field, '');
+    });
 
     if (emptyPanel) {
       emptyPanel.hidden = false;
@@ -128,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  const openEditor = (scene) => {
+  const openEditor = scene => {
     if (!scene) {
       clearEditor();
       return;
@@ -199,15 +323,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
       card.innerHTML = `
         <div class="scene-card-content">
-          <button type="button" class="scene-select-btn" data-scene-select="${escapeText(scene.id)}">
+          <button type="button"
+            class="scene-select-btn"
+            data-scene-select="${escapeText(scene.id)}">
             <span class="scene-card-number">SCENE ${index + 1}</span>
             <span class="scene-card-title">${escapeText(title)}</span>
-            <span class="scene-card-duration">${escapeText(scene.duration || '0')} sec</span>
+            <span class="scene-card-duration">
+              ${escapeText(scene.duration || '0')} sec
+            </span>
           </button>
 
           <div class="scene-order-controls">
-            <button type="button" data-scene-up="${escapeText(scene.id)}" aria-label="Move scene up" ${index === 0 ? 'disabled' : ''}>↑</button>
-            <button type="button" data-scene-down="${escapeText(scene.id)}" aria-label="Move scene down" ${index === scenes.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button"
+              data-scene-up="${escapeText(scene.id)}"
+              aria-label="Move scene up"
+              ${index === 0 ? 'disabled' : ''}>↑</button>
+
+            <button type="button"
+              data-scene-down="${escapeText(scene.id)}"
+              aria-label="Move scene down"
+              ${index === scenes.length - 1 ? 'disabled' : ''}>↓</button>
           </div>
         </div>
       `;
@@ -237,9 +372,13 @@ document.addEventListener('DOMContentLoaded', () => {
       item.className = 'scene-timeline-item';
 
       item.innerHTML = `
-        <div class="timeline-scene-number">${index + 1}</div>
-        <div class="timeline-scene-title">${escapeText(scene.title || 'Untitled Scene')}</div>
-        <div class="timeline-scene-time">${escapeText(scene.duration || '0')} sec</div>
+        <div class="timeline-scene-number">SCENE ${index + 1}</div>
+        <div class="timeline-scene-title">
+          ${escapeText(scene.title || 'Untitled Scene')}
+        </div>
+        <div class="timeline-scene-time">
+          ${escapeText(scene.duration || '0')} sec
+        </div>
       `;
 
       sceneTimeline.appendChild(item);
@@ -259,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const addScene = () => {
     const scene = {
       id: createId(),
+      projectId: currentProjectId,
       title: 'Scene ' + (scenes.length + 1),
       description: '',
       location: '',
@@ -273,7 +413,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     scenes.push(scene);
 
-    persistScenes();
+    if (!persistScenes()) return;
+
     renderAll();
     openEditor(scene);
 
@@ -297,11 +438,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
     Object.assign(scene, collectEditorData());
 
+    scene.projectId = currentProjectId;
+
     if (!scene.title) {
       scene.title = 'Scene ' + getSceneNumber(scene.id);
     }
 
-    persistScenes();
+    if (!persistScenes()) return;
+
     renderAll();
     openEditor(scene);
   };
@@ -315,20 +459,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (!scene) return;
 
-    const confirmed = confirm('Delete "' + (scene.title || 'this scene') + '"?');
+    const confirmed = confirm(
+      'Delete "' + (scene.title || 'this scene') + '"?'
+    );
 
     if (!confirmed) return;
 
     scenes = scenes.filter(item => item.id !== scene.id);
     selectedSceneId = null;
 
-    persistScenes();
+    if (!persistScenes()) return;
+
     renderAll();
     clearEditor();
   };
 
   // =========================================================
-  // REORDER
+  // REORDER SCENES
   // =========================================================
 
   const moveScene = (id, direction) => {
@@ -345,7 +492,8 @@ document.addEventListener('DOMContentLoaded', () => {
     scenes[index] = scenes[newIndex];
     scenes[newIndex] = temp;
 
-    persistScenes();
+    if (!persistScenes()) return;
+
     renderAll();
 
     if (selectedSceneId) {
@@ -370,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   if (sceneList) {
-    sceneList.addEventListener('click', (event) => {
+    sceneList.addEventListener('click', event => {
       const selectButton = event.target.closest('[data-scene-select]');
       const upButton = event.target.closest('[data-scene-up]');
       const downButton = event.target.closest('[data-scene-down]');
@@ -399,7 +547,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const views = document.querySelectorAll('.workspace-view');
 
-  const switchView = (viewName) => {
+  const switchView = viewName => {
     if (!viewName) return;
 
     const target = document.getElementById('view-' + viewName);
@@ -440,55 +588,48 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // =========================================================
-  // CONFIGURATION
+  // CONFIGURATION EXPORT
   // =========================================================
 
-  const loadConfiguration = () => {
-    let config = null;
+  const exportConfiguration = () => {
+    const exportData = {
+      project: projectConfig || {},
+      projectId: currentProjectId,
+      scenes: scenes,
+      exportedAt: new Date().toISOString()
+    };
 
-    try {
-      const saved = sessionStorage.getItem(CONFIG_STORAGE_KEY);
+    const json = JSON.stringify(exportData, null, 2);
 
-      if (saved) {
-        config = JSON.parse(saved);
-      }
-    } catch (error) {
-      console.warn('Could not load Studio configuration:', error);
-    }
+    const blob = new Blob([json], {
+      type: 'application/json'
+    });
 
-    if (!config) return;
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
 
-    const configDisplay = document.getElementById('productionConfig');
+    link.href = url;
+    link.download = 'storyforge-project-' + currentProjectId + '.json';
+    link.click();
 
-    if (configDisplay) {
-      configDisplay.textContent = JSON.stringify(config, null, 2);
-    }
-
-    const storyIdea = document.getElementById('productionStoryIdea');
-
-    if (storyIdea) {
-      storyIdea.textContent =
-        config.storyIdea || config.idea || config.prompt || 'No story idea saved.';
-    }
-
-    const genreDisplay = document.getElementById('productionGenres');
-
-    if (genreDisplay) {
-      const genres = config.genres || config.genre || [];
-      genreDisplay.textContent = Array.isArray(genres)
-        ? genres.join(', ')
-        : String(genres || 'Not specified');
-    }
+    URL.revokeObjectURL(url);
   };
 
+  const exportButtons = document.querySelectorAll(
+    '[data-export-config], #exportConfigBtn, #exportProjectBtn'
+  );
+
+  exportButtons.forEach(button => {
+    button.addEventListener('click', exportConfiguration);
+  });
+
   // =========================================================
-  // INITIALIZE
+  // INITIALIZATION
   // =========================================================
 
-  loadScenes();
   loadConfiguration();
+  loadScenes();
   renderAll();
-
   clearEditor();
 
   try {
@@ -498,9 +639,12 @@ document.addEventListener('DOMContentLoaded', () => {
       switchView(savedView);
     }
   } catch (error) {
-    console.warn('Could not restore the previous view.');
+    console.warn('Could not restore previous view.');
   }
 
-  console.log('StoryForge Production Studio initialized.');
+  console.log(
+    'StoryForge Production Studio initialized for project:',
+    currentProjectId
+  );
 });
-                                             
+        
