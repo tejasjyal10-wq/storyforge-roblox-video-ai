@@ -1110,3 +1110,298 @@ a {
     font-size: 9px;
   }
    }
+/* =========================================================
+   STORYFORGE — SCENE EDITOR UI UPGRADE
+========================================================= */
+
+#view-scenes {
+  color: #e8eaf2;
+}
+
+#view-scenes button {
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease,
+              transform 0.2s ease, opacity 0.2s ease;
+}
+
+#view-scenes button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Scene workspace */
+
+#scenePlanning {
+  display: grid;
+  grid-template-columns: minmax(240px, 320px) minmax(0, 1fr);
+  gap: 22px;
+  align-items: start;
+}
+
+/* Scene list */
+
+#sceneList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+
+.scene-list-item {
+  background: #171b28;
+  border: 1px solid #2a3042;
+  border-radius: 14px;
+  overflow: hidden;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.scene-list-item:hover {
+  border-color: #59627c;
+}
+
+.scene-list-item.active {
+  border-color: #8b75ff;
+  background: #20243a;
+  box-shadow: 0 0 0 1px rgba(139, 117, 255, 0.15);
+}
+
+.scene-card-content {
+  display: flex;
+  align-items: stretch;
+  min-width: 0;
+}
+
+.scene-select-btn {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  background: transparent;
+  border: 0;
+  padding: 16px;
+  color: inherit;
+  text-align: left;
+}
+
+.scene-card-number {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  color: #a99aff;
+  text-transform: uppercase;
+}
+
+.scene-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f3f4fa;
+  overflow-wrap: anywhere;
+}
+
+.scene-card-duration {
+  font-size: 12px;
+  color: #929bb0;
+}
+
+.scene-order-controls {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 8px;
+  gap: 5px;
+  border-left: 1px solid #2a3042;
+}
+
+.scene-order-controls button {
+  width: 32px;
+  height: 32px;
+  border: 1px solid #343b50;
+  border-radius: 8px;
+  background: #22283a;
+  color: #dce1f0;
+  font-size: 16px;
+}
+
+.scene-order-controls button:hover:not(:disabled) {
+  background: #393252;
+  border-color: #8b75ff;
+}
+
+/* Empty states */
+
+.scene-list-empty,
+.timeline-empty {
+  padding: 26px 18px;
+  border: 1px dashed #343b50;
+  border-radius: 12px;
+  color: #929bb0;
+  background: rgba(20, 24, 36, 0.6);
+  text-align: center;
+  font-size: 13px;
+}
+
+/* Editor form */
+
+#sceneEditorForm {
+  background: #171b28;
+  border: 1px solid #2a3042;
+  border-radius: 16px;
+  padding: 22px;
+  min-width: 0;
+}
+
+#sceneEditorForm[hidden],
+#sceneDetailEmpty[hidden] {
+  display: none !important;
+}
+
+#sceneEditorForm input,
+#sceneEditorForm textarea,
+#sceneEditorForm select {
+  box-sizing: border-box;
+  width: 100%;
+  background: #101421;
+  color: #edf0fa;
+  border: 1px solid #343b50;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font: inherit;
+  outline: none;
+}
+
+#sceneEditorForm input:focus,
+#sceneEditorForm textarea:focus,
+#sceneEditorForm select:focus {
+  border-color: #8b75ff;
+  box-shadow: 0 0 0 3px rgba(139, 117, 255, 0.12);
+}
+
+#sceneEditorForm textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+#sceneEditorForm label {
+  display: block;
+  margin-bottom: 8px;
+  color: #aeb6ca;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+#sceneEditorForm .form-group,
+#sceneEditorForm .field-group {
+  margin-bottom: 18px;
+}
+
+/* Editor action buttons */
+
+#saveSceneBtn {
+  background: linear-gradient(135deg, #7760f5, #957cff);
+  color: white;
+  border: 0;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 700;
+}
+
+#saveSceneBtn:hover {
+  filter: brightness(1.12);
+  transform: translateY(-1px);
+}
+
+#deleteSceneBtn {
+  background: #30212c;
+  color: #ffb6c3;
+  border: 1px solid #603443;
+  border-radius: 10px;
+  padding: 12px 20px;
+  font-weight: 600;
+}
+
+#deleteSceneBtn:hover {
+  background: #472938;
+}
+
+/* Timeline */
+
+#sceneTimeline {
+  display: flex;
+  align-items: stretch;
+  gap: 14px;
+  padding: 16px 4px;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.scene-timeline-item {
+  flex: 0 0 190px;
+  min-width: 190px;
+  padding: 16px;
+  background: linear-gradient(145deg, #20263a, #171b28);
+  border: 1px solid #343b50;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+}
+
+.scene-timeline-item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, #8068ff, #46c8dc);
+}
+
+.timeline-scene-number {
+  color: #a99aff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  margin-bottom: 12px;
+}
+
+.timeline-scene-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #f0f2fb;
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.timeline-scene-time {
+  color: #a0a9bf;
+  font-size: 12px;
+}
+
+/* Responsive */
+
+@media (max-width: 900px) {
+  #scenePlanning {
+    grid-template-columns: 1fr;
+  }
+
+  #sceneList {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 600px) {
+  #sceneList {
+    grid-template-columns: 1fr;
+  }
+
+  #sceneEditorForm {
+    padding: 15px;
+  }
+
+  .scene-timeline-item {
+    flex-basis: 160px;
+    min-width: 160px;
+  }
+}
