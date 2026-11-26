@@ -1,26 +1,33 @@
-
 'use strict';
 
 const express = require('express');
 const path = require('path');
+const fs = require('fs');
 
 const router = express.Router();
 
 const publicDir = path.join(__dirname, '..', 'public');
 
-// Homepage
+function sendPage(fileName, res) {
+  const filePath = path.join(publicDir, fileName);
+
+  if (!fs.existsSync(filePath)) {
+    return res.status(404).send(`Page file missing: ${fileName}`);
+  }
+
+  return res.sendFile(filePath);
+}
+
 router.get('/', (req, res) => {
-  res.sendFile(path.join(publicDir, 'index.html'));
+  sendPage('index.html', res);
 });
 
-// Studio
 router.get('/studio.html', (req, res) => {
-  res.sendFile(path.join(publicDir, 'studio.html'));
+  sendPage('studio.html', res);
 });
 
-// Production
 router.get('/production.html', (req, res) => {
-  res.sendFile(path.join(publicDir, 'production.html'));
+  sendPage('production.html', res);
 });
 
 module.exports = router;
