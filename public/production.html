@@ -75,6 +75,7 @@
       <a href="/studio.html" class="sidebar-back-link">
         ← Back to Story Studio
       </a>
+
       <div class="sidebar-footer">
         STORYFORGE STUDIO
         <span>Cinematic Story Creation</span>
@@ -111,7 +112,9 @@
     <!-- WORKSPACE CONTENT -->
     <div class="production-workspace">
 
-      <!-- OVERVIEW -->
+      <!-- =========================================
+           OVERVIEW
+      ========================================== -->
       <section class="workspace-view active" id="view-overview">
 
         <div class="workspace-heading">
@@ -135,8 +138,8 @@
           <div class="overview-stat-card">
             <span class="stat-icon">▤</span>
             <span class="stat-label">SCENES</span>
-            <strong id="sceneCount">Not generated</strong>
-            <span class="stat-description">Story breakdown pending</span>
+            <strong id="sceneCount">0 Scenes</strong>
+            <span class="stat-description">Story breakdown</span>
           </div>
 
           <div class="overview-stat-card">
@@ -159,12 +162,16 @@
         <div class="overview-main-grid">
 
           <div class="workspace-panel story-panel">
+
             <div class="panel-header">
               <div>
                 <span class="panel-eyebrow">PROJECT DETAILS</span>
                 <h2>Your Story</h2>
               </div>
-              <button class="panel-action" data-open-view="scenes">VIEW SCENES ↗</button>
+
+              <button class="panel-action" data-open-view="scenes">
+                VIEW SCENES ↗
+              </button>
             </div>
 
             <div class="story-description-box">
@@ -176,13 +183,16 @@
 
             <div class="genre-display">
               <span class="production-label">GENRES</span>
+
               <div class="genre-tags" id="productionGenres">
                 <span class="genre-tag">Adventure</span>
               </div>
             </div>
+
           </div>
 
           <div class="workspace-panel settings-panel">
+
             <div class="panel-header">
               <div>
                 <span class="panel-eyebrow">CONFIGURATION</span>
@@ -217,6 +227,7 @@
             <div class="camera-director-note">
               Cinematic cameras adapt to each scene.
             </div>
+
           </div>
 
         </div>
@@ -229,21 +240,27 @@
               <span class="panel-eyebrow">CINEMATIC OUTPUT</span>
               <h2>Preview Workspace</h2>
             </div>
+
             <span class="preview-format">16:9</span>
           </div>
 
           <div class="video-preview-container">
+
             <div class="video-preview-content">
               <div class="video-preview-symbol">▶</div>
+
               <h3>Story Preview</h3>
+
               <p id="videoPreviewDescription">
                 Your cinematic preview will become available
                 when video generation is integrated.
               </p>
+
               <span class="video-preview-status">
                 AWAITING GENERATION
               </span>
             </div>
+
           </div>
 
         </div>
@@ -279,59 +296,227 @@
 
       </section>
 
-      <!-- SCENE EDITOR -->
+      <!-- =========================================
+           SCENE EDITOR
+      ========================================== -->
       <section class="workspace-view" id="view-scenes">
 
         <div class="workspace-heading">
           <div>
             <span class="workspace-eyebrow">STORY STRUCTURE</span>
             <h1>Scene <span>Editor</span></h1>
-            <p>Organize your story scenes and cinematic sequence.</p>
+            <p>Create, organize and edit every scene in your story.</p>
           </div>
         </div>
 
+        <!-- SCENE ACTION BAR -->
+        <div class="scene-action-bar workspace-panel">
+
+          <div>
+            <span class="panel-eyebrow">STORY SEQUENCE</span>
+            <h2 id="sceneEditorHeading">Scene Manager</h2>
+            <p id="sceneEditorCount">0 scenes in your story</p>
+          </div>
+
+          <button
+            type="button"
+            class="production-primary-button"
+            id="addSceneBtn"
+          >
+            + ADD SCENE
+          </button>
+
+        </div>
+
+        <!-- SCENE EDITOR GRID -->
         <div class="scene-editor-layout">
 
+          <!-- SCENE LIST -->
           <div class="workspace-panel scene-list-panel">
+
             <div class="panel-header">
               <div>
                 <span class="panel-eyebrow">SEQUENCE</span>
-                <h2>Scenes</h2>
+                <h2>Your Scenes</h2>
               </div>
             </div>
 
             <div id="scenePlanning" class="scene-planning-placeholder">
-              <div class="scene-placeholder-icon">🎞</div>
-              <h3>Scene Plan Awaiting Generation</h3>
-              <p>
-                Your story director will organize your concept into
-                connected scenes when generation is integrated.
-              </p>
+
+              <div id="sceneList" class="scene-list">
+
+                <div class="scene-empty-state">
+                  <div class="scene-placeholder-icon">🎞</div>
+                  <h3>No Scenes Yet</h3>
+                  <p>Start building your story by adding your first scene.</p>
+                </div>
+
+              </div>
+
             </div>
+
           </div>
 
+          <!-- SCENE DETAILS -->
           <div class="workspace-panel scene-detail-panel">
+
             <div class="panel-header">
               <div>
                 <span class="panel-eyebrow">SCENE WORKSPACE</span>
-                <h2>Scene Details</h2>
+                <h2 id="sceneDetailHeading">Scene Details</h2>
               </div>
             </div>
 
-            <div class="scene-detail-placeholder">
+            <div id="sceneDetailEmpty" class="scene-detail-placeholder">
+
               <span class="scene-placeholder-icon">◈</span>
-              <h3>Scene Workspace</h3>
+              <h3>Select or Create a Scene</h3>
+
               <p>
-                Scene descriptions, characters, environments,
-                animation, camera direction and dialogue will
-                appear here.
+                Choose a scene from your sequence or create a new one
+                to begin editing its story details.
               </p>
+
             </div>
+
+            <form id="sceneEditorForm" class="scene-editor-form" hidden>
+
+              <div class="scene-form-field">
+                <label for="sceneTitleInput">Scene Title</label>
+
+                <input
+                  type="text"
+                  id="sceneTitleInput"
+                  placeholder="Enter scene title"
+                  maxlength="120"
+                >
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneDescriptionInput">Scene Description</label>
+
+                <textarea
+                  id="sceneDescriptionInput"
+                  placeholder="Describe what happens in this scene..."
+                  rows="5"
+                ></textarea>
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneLocationInput">Location</label>
+
+                <input
+                  type="text"
+                  id="sceneLocationInput"
+                  placeholder="Where does this scene take place?"
+                  maxlength="200"
+                >
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneCharactersInput">Characters</label>
+
+                <input
+                  type="text"
+                  id="sceneCharactersInput"
+                  placeholder="Character names (separated by commas)"
+                  maxlength="500"
+                >
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneActionInput">Character Actions</label>
+
+                <textarea
+                  id="sceneActionInput"
+                  placeholder="What are the characters doing?"
+                  rows="4"
+                ></textarea>
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneDialogueInput">Dialogue / Narration</label>
+
+                <textarea
+                  id="sceneDialogueInput"
+                  placeholder="Add dialogue or narration for this scene..."
+                  rows="4"
+                ></textarea>
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneDurationInput">
+                  Estimated Duration (seconds)
+                </label>
+
+                <input
+                  type="number"
+                  id="sceneDurationInput"
+                  min="1"
+                  max="3600"
+                  placeholder="60"
+                >
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneCameraInput">Camera Direction</label>
+
+                <textarea
+                  id="sceneCameraInput"
+                  placeholder="Describe the cinematic camera movement or angle..."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneAnimationInput">Animation / Movement</label>
+
+                <textarea
+                  id="sceneAnimationInput"
+                  placeholder="Describe character movements and animation..."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="scene-form-field">
+                <label for="sceneNotesInput">Production Notes</label>
+
+                <textarea
+                  id="sceneNotesInput"
+                  placeholder="Additional notes for this scene..."
+                  rows="3"
+                ></textarea>
+              </div>
+
+              <div class="scene-editor-actions">
+
+                <button
+                  type="submit"
+                  class="production-primary-button"
+                  id="saveSceneBtn"
+                >
+                  SAVE SCENE
+                </button>
+
+                <button
+                  type="button"
+                  class="production-secondary-button"
+                  id="deleteSceneBtn"
+                >
+                  DELETE SCENE
+                </button>
+
+              </div>
+
+            </form>
+
           </div>
 
         </div>
 
+        <!-- STORY TIMELINE -->
         <div class="workspace-panel timeline-panel">
+
           <div class="panel-header">
             <div>
               <span class="panel-eyebrow">SEQUENCE EDITING</span>
@@ -339,14 +524,21 @@
             </div>
           </div>
 
-          <div class="timeline-empty">
-            Scenes will appear on the timeline after scene generation.
+          <div id="sceneTimeline" class="scene-timeline">
+
+            <div class="timeline-empty">
+              Add scenes to begin building your story timeline.
+            </div>
+
           </div>
+
         </div>
 
       </section>
 
-      <!-- CHARACTERS -->
+      <!-- =========================================
+           CHARACTERS
+      ========================================== -->
       <section class="workspace-view" id="view-characters">
 
         <div class="workspace-heading">
@@ -358,6 +550,7 @@
         </div>
 
         <div class="workspace-panel character-workspace-panel">
+
           <div class="panel-header">
             <div>
               <span class="panel-eyebrow">CHARACTER CONFIGURATION</span>
@@ -366,24 +559,32 @@
           </div>
 
           <div class="character-production-box">
+
             <div class="character-production-icon">♙</div>
+
             <div>
               <span class="production-label">CASTING MODE</span>
+
               <h3 id="characterWorkspaceMode">Character Library</h3>
+
               <p id="productionCharacterDescription">
                 Your character settings will appear here.
               </p>
             </div>
+
           </div>
 
           <a href="/characters.html" class="production-text-link">
             OPEN CHARACTER LIBRARY ↗
           </a>
+
         </div>
 
       </section>
 
-      <!-- WORLDS -->
+      <!-- =========================================
+           WORLDS
+      ========================================== -->
       <section class="workspace-view" id="view-worlds">
 
         <div class="workspace-heading">
@@ -395,19 +596,24 @@
         </div>
 
         <div class="workspace-panel world-workspace-panel">
+
           <div class="world-placeholder">
             <span class="scene-placeholder-icon">◇</span>
             <h2>World Workspace</h2>
+
             <p>
               Story locations, environments, lighting, atmosphere
               and world continuity will be organized here.
             </p>
           </div>
+
         </div>
 
       </section>
 
-      <!-- AUDIO -->
+      <!-- =========================================
+           AUDIO
+      ========================================== -->
       <section class="workspace-view" id="view-audio">
 
         <div class="workspace-heading">
@@ -419,6 +625,7 @@
         </div>
 
         <div class="workspace-panel audio-workspace-panel">
+
           <div class="panel-header">
             <div>
               <span class="panel-eyebrow">AUDIO CONFIGURATION</span>
@@ -430,6 +637,7 @@
 
             <div class="audio-production-item" id="audioMusic">
               <span class="audio-icon">♫</span>
+
               <div>
                 <strong>Background Music</strong>
                 <span class="audio-state">Not configured</span>
@@ -438,6 +646,7 @@
 
             <div class="audio-production-item" id="audioEffects">
               <span class="audio-icon">🔊</span>
+
               <div>
                 <strong>Sound Effects</strong>
                 <span class="audio-state">Not configured</span>
@@ -446,6 +655,7 @@
 
             <div class="audio-production-item" id="audioNarration">
               <span class="audio-icon">🎙</span>
+
               <div>
                 <strong>Voice Narration</strong>
                 <span class="audio-state">Not configured</span>
@@ -454,6 +664,7 @@
 
             <div class="audio-production-item" id="audioDialogue">
               <span class="audio-icon">💬</span>
+
               <div>
                 <strong>Character Dialogue</strong>
                 <span class="audio-state">Not configured</span>
@@ -461,11 +672,15 @@
             </div>
 
           </div>
+
         </div>
 
       </section>
 
-      <!-- PIPELINE -->
+      
+      <!-- =========================================
+           PIPELINE
+      ========================================== -->
       <section class="workspace-view" id="view-pipeline">
 
         <div class="workspace-heading">
@@ -477,6 +692,7 @@
         </div>
 
         <div class="workspace-panel pipeline-panel">
+
           <div class="panel-header">
             <div>
               <span class="panel-eyebrow">WORKFLOW</span>
@@ -488,55 +704,68 @@
 
             <div class="pipeline-item pipeline-ready">
               <span class="pipeline-indicator">✓</span>
+
               <div>
                 <strong>Studio Configuration</strong>
                 <p>Your story settings have been received.</p>
               </div>
+
               <span class="pipeline-state">READY</span>
             </div>
 
             <div class="pipeline-item">
               <span class="pipeline-indicator">02</span>
+
               <div>
                 <strong>Story & Scene Generation</strong>
                 <p>Story director and scene planning.</p>
               </div>
+
               <span class="pipeline-state">PENDING</span>
             </div>
 
             <div class="pipeline-item">
               <span class="pipeline-indicator">03</span>
+
               <div>
                 <strong>Character & World Preparation</strong>
                 <p>Characters, environments and continuity.</p>
               </div>
+
               <span class="pipeline-state">PENDING</span>
             </div>
 
             <div class="pipeline-item">
               <span class="pipeline-indicator">04</span>
+
               <div>
                 <strong>Animation & Audio</strong>
                 <p>Motion, camera direction and audio.</p>
               </div>
+
               <span class="pipeline-state">PENDING</span>
             </div>
 
             <div class="pipeline-item">
               <span class="pipeline-indicator">05</span>
+
               <div>
                 <strong>Video Rendering</strong>
                 <p>Cinematic assembly and rendering.</p>
               </div>
+
               <span class="pipeline-state">PENDING</span>
             </div>
 
           </div>
+
         </div>
 
       </section>
 
-      <!-- EXPORT -->
+      <!-- =========================================
+           EXPORT
+      ========================================== -->
       <section class="workspace-view" id="view-export">
 
         <div class="workspace-heading">
@@ -548,6 +777,7 @@
         </div>
 
         <div class="workspace-panel export-panel">
+
           <div class="panel-header">
             <div>
               <span class="panel-eyebrow">PROJECT DATA</span>
@@ -567,16 +797,21 @@
           >
             EXPORT CONFIGURATION ↓
           </button>
+
         </div>
 
         <div class="workspace-panel roblox-export-panel">
+
           <span class="panel-eyebrow">ROBLOX PRODUCTION TARGET</span>
+
           <h2>Roblox Export Workspace</h2>
+
           <p>
             Roblox scene export, environment setup, animation,
             obstacle systems and project integration belong to
             the Roblox production workflow.
           </p>
+
         </div>
 
       </section>
@@ -596,5 +831,4 @@
 <script src="/production.js"></script>
 
 </body>
-  </html>
-  
+</html>
