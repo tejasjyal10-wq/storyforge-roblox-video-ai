@@ -1,0 +1,77 @@
+
+'use strict';
+
+document.addEventListener('DOMContentLoaded', () => {
+  const form = document.getElementById('studioForm');
+  const storyIdea = document.getElementById('storyIdea');
+  const characterCount = document.getElementById('characterCount');
+  const createStoryBtn = document.getElementById('createStoryBtn');
+
+  // Character counter
+  storyIdea.addEventListener('input', () => {
+    const count = storyIdea.value.length;
+    characterCount.textContent = `${count} characters`;
+  });
+
+  // Genre card interaction
+  document.querySelectorAll('.genre-option').forEach(option => {
+    option.addEventListener('click', () => {
+      document.querySelectorAll('.genre-option').forEach(card => {
+        card.classList.remove('genre-active');
+      });
+
+      option.classList.add('genre-active');
+    });
+  });
+
+  // Form submission
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    const formData = new FormData(form);
+
+    const storyConfig = {
+      storyIdea: formData.get('storyIdea'),
+      genre: formData.get('genre'),
+      characterMode: formData.get('characterMode'),
+      visualStyle: formData.get('visualStyle'),
+      cameraStyle: formData.get('cameraStyle'),
+      duration: formData.get('duration'),
+      quality: formData.get('quality'),
+      audio: {
+        backgroundMusic: formData.has('backgroundMusic'),
+        soundEffects: formData.has('soundEffects'),
+        voiceNarration: formData.has('voiceNarration'),
+        characterDialogue: formData.has('characterDialogue')
+      }
+    };
+
+    if (!storyConfig.storyIdea.trim()) {
+      alert('Please enter your story idea first.');
+      return;
+    }
+
+    createStoryBtn.disabled = true;
+    createStoryBtn.innerHTML = '<span>PREPARING STORY...</span>';
+
+    try {
+      sessionStorage.setItem(
+        'storyforge_config',
+        JSON.stringify(storyConfig)
+      );
+
+      window.location.href = '/production.html';
+
+    } catch (error) {
+      console.error('StoryForge error:', error);
+      alert('Something went wrong while preparing your story.');
+
+      createStoryBtn.disabled = false;
+      createStoryBtn.innerHTML =
+        '<span>BUILD MY STORY</span><span class="submit-arrow">→</span>';
+    }
+  });
+
+  console.log('StoryForge Studio initialized.');
+});
+          
