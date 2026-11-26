@@ -4,75 +4,121 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#080808">
+  <meta name="description" content="StoryForge — Turn your imagination into cinematic Roblox stories.">
   <title>StoryForge — Your Story. Your World.</title>
-  <meta name="description" content="Create cinematic Roblox stories with StoryForge AI.">
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <main class="hero">
-    <div class="background"></div>
-    <div class="overlay"></div>
+
+  <div class="background-effects" aria-hidden="true">
+    <div class="red-glow"></div>
     <div class="particles"></div>
+  </div>
 
-    <header class="navbar">
-      <a href="/" class="logo">S<span>F</span> STORYFORGE</a>
-      <nav>
-        <a href="#studio">STUDIO</a>
-        <a href="#characters">CHARACTERS</a>
-        <a href="#projects">PROJECTS</a>
-      </nav>
-      <button class="menu" aria-label="Menu">☰</button>
-    </header>
+  <header class="site-header">
+    <a href="/" class="logo" aria-label="StoryForge Home">
+      <span class="logo-mark">SF</span>
+      <span class="logo-name">STORYFORGE</span>
+    </a>
 
-    <section class="content" id="studio">
-      <p class="eyebrow">YOUR STORY. YOUR WORLD.</p>
+    <nav class="main-nav" aria-label="Main navigation">
+      <a href="/studio.html">STUDIO</a>
+      <a href="/characters.html">CHARACTERS</a>
+      <a href="/projects.html">PROJECTS</a>
+      <a href="/agents.html">AGENTS</a>
+      <a href="#explore">EXPLORE</a>
+    </nav>
 
-      <h1>STORY<span>FORGE</span></h1>
+    <a href="/studio.html" class="header-cta">
+      START CREATING <span>↗</span>
+    </a>
+  </header>
 
-      <p class="description">
-        Transform your imagination into cinematic worlds.
-        Create stories, build characters, and bring your vision to life.
-      </p>
+  <main>
+    <section class="hero" id="home">
+      <div class="hero-art" aria-hidden="true"></div>
 
-      <a href="#create" class="cta">
-        <span>CREATE YOUR STORY</span>
-        <span>↗</span>
-      </a>
+      <div class="hero-content">
+        <p class="hero-eyebrow">AI STORY PRODUCTION STUDIO</p>
+
+        <h1>
+          <span class="story-word">STORY</span>
+          <span class="forge-word">FORGE</span>
+        </h1>
+
+        <p class="hero-description">
+          Turn your imagination into cinematic Roblox stories.
+          Create worlds, characters, adventures, and stories.
+        </p>
+
+        <a href="/studio.html" class="create-button">
+          <span>CREATE YOUR STORY</span>
+          <span class="button-arrow">↗</span>
+        </a>
+
+        <div class="hero-note">
+          <span class="status-dot"></span>
+          YOUR STORY. YOUR WORLD.
+        </div>
+      </div>
+
+      <div class="hero-bottom-label">
+        <span>IMAGINE</span>
+        <span class="label-line"></span>
+        <span>CREATE</span>
+        <span class="label-line"></span>
+        <span>EXPERIENCE</span>
+      </div>
     </section>
 
-    <div class="side-label">STORYFORGE · AI STORY PRODUCTION</div>
+    <section class="explore-section" id="explore">
+      <div class="section-heading">
+        <p class="section-eyebrow">YOUR NEXT ADVENTURE STARTS HERE</p>
+        <h2>EXPLORE <span>STORYFORGE</span></h2>
+        <p>Everything you need to bring your stories to life.</p>
+      </div>
 
-    <footer class="footer">
-      <span>CREATE · DREAM · EXPLORE</span>
-      <a href="#create">↓ SCROLL TO BEGIN</a>
-      <span>01 — EXPERIENCE</span>
-    </footer>
+      <div class="feature-grid">
+
+        <a href="/studio.html" class="feature-card">
+          <span class="feature-number">01</span>
+          <h3>Story Studio</h3>
+          <p>Turn your imagination into a story and build your next adventure.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+
+        <a href="/characters.html" class="feature-card">
+          <span class="feature-number">02</span>
+          <h3>Character Library</h3>
+          <p>Create characters and keep them ready for your future stories.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+
+        <a href="/projects.html" class="feature-card">
+          <span class="feature-number">03</span>
+          <h3>Your Projects</h3>
+          <p>Keep your stories and productions organized in one place.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+
+        <a href="/agents.html" class="feature-card">
+          <span class="feature-number">04</span>
+          <h3>AI Agents</h3>
+          <p>Discover the AI team powering your story-production workflow.</p>
+          <span class="feature-arrow">↗</span>
+        </a>
+
+      </div>
+    </section>
   </main>
 
-  <section class="create-section" id="create">
-    <div class="create-inner">
-      <p class="eyebrow">THE BEGINNING OF SOMETHING</p>
-      <h2>WHAT'S YOUR <span>STORY?</span></h2>
-      <p>Every world begins with an idea.</p>
-
-      <form id="storyForm">
-        <textarea
-          id="storyIdea"
-          placeholder="Imagine a story where..."
-          required
-        ></textarea>
-
-        <button type="submit" id="createBtn">
-          <span>START CREATING</span>
-          <span>↗</span>
-        </button>
-      </form>
-
-      <div id="storyResult" aria-live="polite"></div>
-    </div>
-  </section>
+  <footer class="site-footer">
+    <a href="/" class="footer-logo">STORYFORGE</a>
+    <p>YOUR STORY. YOUR WORLD.</p>
+    <span>© 2026 STORYFORGE</span>
+  </footer>
 
   <script src="/script.js"></script>
 </body>
-          </html>
-          
+</html>
