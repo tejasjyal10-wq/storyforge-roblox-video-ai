@@ -648,3 +648,53 @@ body {
     animation: none !important;
   }
 }
+/* CUSTOM GENRES - STORYFORGE THEME */
+
+.custom-genre-field {
+  margin-top: 28px;
+}
+
+.custom-genre-field input[type="text"] {
+  width: 100%;
+  min-height: 75px;
+  box-sizing: border-box;
+  padding: 22px 24px;
+
+  background: #080809;
+  color: #ffffff;
+
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 14px;
+
+  font-size: 18px;
+  font-family: inherit;
+
+  outline: none;
+  transition: border-color 0.25s, box-shadow 0.25s;
+}
+
+.custom-genre-field input[type="text"]::placeholder {
+  color: #777780;
+  font-size: 16px;
+}
+
+.custom-genre-field input[type="text"]:focus {
+  border-color: #ef3535;
+  box-shadow: 0 0 15px rgba(239, 53, 53, 0.12);
+}
+
+.genre-help {
+  color: #92929a;
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+/* Mobile */
+
+@media (max-width: 600px) {
+  .custom-genre-field input[type="text"] {
+    min-height: 70px;
+    font-size: 16px;
+    padding: 18px;
+  }
+}
