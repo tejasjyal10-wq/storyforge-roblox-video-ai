@@ -14,62 +14,78 @@ function createJobManager() {
     jobs,
 
     createJob(data) {
-      const id = data.id || `job-${jobs.size + 1}`;
+      const jobId = data.jobId || `job-${jobs.size + 1}`;
 
       const job = {
-        id,
-        status: 'pending',
+        ...data,
+        jobId,
+        status: 'queued',
         stages: [],
         outputs: {},
-        errors: [],
-            ...data
+        errors: []
       };
 
-      jobs.set(id, job);
+      jobs.set(jobId, job);
       return job;
     },
 
-    getJob(id) {
-      return jobs.get(id);
+    getJob(jobId) {
+      return jobs.get(jobId) || null;
     },
 
-    updateJob(id, updates) {
-      const job = jobs.get(id);
+    updateJob(jobId, updates) {
+      const job = jobs.get(jobId);
       if (!job) return null;
 
       Object.assign(job, updates);
       return job;
     },
 
-    setStages(id, stages) {
-      const job = jobs.get(id);
-      if (job) job.stages = stages;
+    setStages(jobId, stages) {
+      const job = jobs.get(jobId);
+      if (!job) return null;
+
+      job.stages = stages;
+      return job;
     },
 
-    updateStage(id, stageId, updates) {
-      const job = jobs.get(id);
-      if (!job) return;
+    updateStage(jobId, stageId, updates) {
+      const job = jobs.get(jobId);
+      if (!job) return null;
 
       const stage = job.stages.find(
         item => item.id === stageId
       );
 
-      if (stage) Object.assign(stage, updates);
+      if (stage) {
+        Object.assign(stage, updates);
+      }
+
+      return stage || null;
     },
 
-    updateProgress(id, progress) {
-      const job = jobs.get(id);
-      if (job) job.progress = progress;
+    updateProgress(jobId, progress) {
+      const job = jobs.get(jobId);
+      if (!job) return null;
+
+      job.progress = progress;
+      return job;
     },
 
-    addError(id, error) {
-      const job = jobs.get(id);
-      if (job) job.errors.push(error);
+    addError(jobId, error) {
+      const job = jobs.get(jobId);
+      if (!job) return null;
+
+      job.errors.push(error);
+      return job;
     },
 
-    completeJob(id, status) {
-      const job = jobs.get(id);
-      if (job) job.status = status;
+    completeJob(jobId, status) {
+      const job = jobs.get(jobId);
+      if (!job) return null;
+
+      job.status = status;
+      return job;
     }
   };
 }
@@ -91,9 +107,11 @@ function createEngine({
   maxRetries = 0,
   timeoutMs = 0
 }) {
+  const jobManager = createJobManager();
+
   return new PipelineEngine({
     registry: createRegistry(agents),
-    jobManager: createJobManager(),
+    jobManager,
     executionPolicy: new AgentExecutionPolicy({
       maxRetries,
       timeoutMs,
@@ -335,4 +353,3 @@ test('successful agents still return validated outputs', async () => {
 
   assert.ok(result);
 });
-    
