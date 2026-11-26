@@ -713,3 +713,18 @@ a {
     scroll-behavior: auto !important;
   }
 }
+/* STORYFORGE PORTRAIT IMAGE FIX */
+
+@media (orientation: portrait), (max-width: 600px) {
+  .hero-art {
+    background-image: url('/images/storyforge-portrait.png') !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: contain !important;
+    width: 100% !important;
+    height: 100% !important;
+    left: 0 !important;
+    right: auto !important;
+    top: 0 !important;
+  }
+}
