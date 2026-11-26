@@ -144,6 +144,9 @@ class AgentExecutionPolicy {
     const finalError = new Error(
       lastError?.message || 'Agent execution failed.'
     );
+    if (lastError?.code) {
+  finalError.code = lastError.code;
+    }
 
     finalError.attempts = history.length;
     finalError.history = history;
