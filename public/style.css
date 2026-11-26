@@ -148,32 +148,33 @@ a {
 
 /* Artwork placeholder area — actual image will be connected separately */
 
+/* STORYFORGE HERO ART */
+
 .hero-art {
   position: absolute;
   right: 0;
   top: 0;
   width: 62%;
   height: 100%;
-  z-index: 0;
+  z-index: 1;
 
-  background:
-    radial-gradient(ellipse at 65% 45%,
-      rgba(100,0,15,0.16),
-      transparent 65%);
+  background-image: url('/images/storyforge-hero.png');
+  background-repeat: no-repeat;
+  background-position: center right;
+  background-size: contain;
+
+  pointer-events: none;
 }
 
 .hero-art::before {
   content: "";
   position: absolute;
-  width: 460px;
-  height: 460px;
-  top: 50%;
-  right: 10%;
-  transform: translateY(-50%);
-  border-radius: 50%;
-  background: rgba(100,0,15,0.13);
-  filter: blur(100px);
-  animation: redPulse 6s ease-in-out infinite;
+  inset: 0;
+  background: radial-gradient(
+    circle at 75% 50%,
+    rgba(120, 0, 20, 0.15),
+    transparent 65%
+  );
 }
 
 .hero-art::after {
@@ -183,8 +184,8 @@ a {
   background: linear-gradient(
     90deg,
     #080808 0%,
-    transparent 45%,
-    rgba(8,8,8,0.1)
+    rgba(8, 8, 8, 0.15) 35%,
+    transparent 75%
   );
 }
 
