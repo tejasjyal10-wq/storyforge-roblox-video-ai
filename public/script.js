@@ -1,45 +1,52 @@
-
 'use strict';
 
-const storyForm = document.getElementById('storyForm');
-const storyIdea = document.getElementById('storyIdea');
-const createBtn = document.getElementById('createBtn');
-const storyResult = document.getElementById('storyResult');
+/* =========================================
+   STORYFORGE — HOME SCRIPT
+   ========================================= */
 
-storyForm.addEventListener('submit', async (event) => {
-  event.preventDefault();
+document.addEventListener('DOMContentLoaded', () => {
 
-  const idea = storyIdea.value.trim();
+  // Smooth scrolling for internal navigation
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', event => {
+      const targetId = link.getAttribute('href');
 
-  if (!idea) {
-    storyResult.textContent = 'Please enter a story idea first.';
-    return;
-  }
+      if (!targetId || targetId === '#') return;
 
-  createBtn.disabled = true;
-  createBtn.innerHTML = '<span>CREATING YOUR STORY...</span><span>⟳</span>';
-  storyResult.textContent = 'StoryForge is processing your idea...';
+      const target = document.querySelector(targetId);
 
-  try {
-    const response = await fetch('/api/story-director', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ idea })
+      if (target) {
+        event.preventDefault();
+
+        target.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start'
+        });
+      }
+    });
+  });
+
+  // Explore card hover interaction
+  const cards = document.querySelectorAll('.explore-card');
+
+  cards.forEach(card => {
+    card.addEventListener('mouseenter', () => {
+      card.classList.add('card-active');
     });
 
-    const data = await response.json();
+    card.addEventListener('mouseleave', () => {
+      card.classList.remove('card-active');
+    });
+  });
 
-    if (!response.ok) {
-      throw new Error(data.error || 'Story creation failed.');
-    }
+  // Hero entrance animation
+  const heroContent = document.querySelector('.hero-content');
 
-    storyResult.textContent = JSON.stringify(data, null, 2);
-  } catch (error) {
-    storyResult.textContent = 'Unable to create your story: ' + error.message;
-  } finally {
-    createBtn.disabled = false;
-    createBtn.innerHTML = '<span>START CREATING</span><span>↗</span>';
+  if (heroContent) {
+    heroContent.classList.add('hero-loaded');
   }
+
+  // Homepage initialization
+  console.log('StoryForge Home initialized successfully.');
+
 });
