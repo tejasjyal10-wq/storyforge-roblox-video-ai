@@ -1,0 +1,37 @@
+
+name: StoryForge Core Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  core-tests:
+    name: Core Pipeline Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Verify Node.js
+        run: node --version
+
+      - name: Run Pipeline Engine Integration Tests
+        run: node --test core/pipeline-engine.integration.test.js
+
+      - name: Run Output Validator Tests
+        run: node --test core/production-output-validator.test.js
+
+      - name: Run Execution Policy Tests
+        run: node --test core/agent-execution-policy.test.js
+
+      - name: Run Pipeline Execution Policy Integration Tests
+        run: node --test core/pipeline-execution-policy.integration.test.js
+        
