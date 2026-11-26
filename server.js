@@ -20,7 +20,14 @@ app.use(express.static(publicDir));
 app.get('/', (req, res) => {
   res.sendFile(path.join(publicDir, 'index.html'));
 });
+// Explicit Studio and Production routes
+app.get('/studio.html', (req, res) => {
+  res.sendFile(path.join(publicDir, 'studio.html'));
+});
 
+app.get('/production.html', (req, res) => {
+  res.sendFile(path.join(publicDir, 'production.html'));
+});
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({
