@@ -11,7 +11,7 @@ async function runTests() {
   assert.equal(integration.registry.has('storyDirector'), true);
 
   // Test 2: Agent Registry contains the agent
-  assert.equal(integration.registry.count(), 1);
+  assert.equal(integration.registry.list().length, 1);
 
   // Test 3: Pipeline accepts a story idea
   const result = await integration.run(
