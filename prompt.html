@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoryForge | Create Story</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="navbar">
+    <h2>StoryForge</h2>
+    <div class="nav-links">
+        <a href="index.html">Home</a>
+        <a href="prompt.html">Create Story</a>
+        <a href="production.html">Production</a>
+    </div>
+</nav>
+
+<main class="prompt-page">
+    <section class="prompt-container">
+        <span class="eyebrow">STORY CREATION</span>
+        <h1>Create Your Story</h1>
+        <p>Describe the story you want to bring to life.</p>
+
+        <textarea id="storyPrompt"
+            placeholder="Describe your story idea..."
+            rows="8"></textarea>
+
+        <button class="primary-btn" id="createStoryBtn">
+            Generate Story
+        </button>
+
+        <div id="storyOutput"></div>
+
+        <a href="production.html" class="secondary-btn">
+            Go to Production →
+        </a>
+    </section>
+</main>
+
+<script>
+document.getElementById("createStoryBtn").addEventListener("click", () => {
+    const prompt = document.getElementById("storyPrompt").value.trim();
+
+    if (!prompt) {
+        alert("Please enter a story idea first.");
+        return;
+    }
+
+    localStorage.setItem("storyforge_prompt", prompt);
+
+    document.getElementById("storyOutput").innerHTML =
+        "<p>Your story idea has been saved.</p>";
+});
+</script>
+
+</body>
+</html>
