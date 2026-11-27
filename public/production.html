@@ -46,21 +46,28 @@
     </section>
 
     <!-- FEEDBACK -->
-    <section class="content-section">
-        <h2>Feedback</h2>
-        <div id="feedbackContent">
-            Your video feedback will appear here.
-        </div>
-    </section>
+<section class="content-section" id="feedbackSection" hidden>
+    <h2>Feedback</h2>
+    <p>Write your own feedback about the finished video.</p>
 
-    <!-- VIDEO IMPROVEMENTS -->
-    <section class="content-section">
-        <h2>Video Improvements</h2>
-        <div id="improvementsContent">
-            Video improvements will appear here.
-        </div>
-    </section>
+    <textarea
+        id="feedbackInput"
+        placeholder="Write your feedback here..."
+        rows="6"
+    ></textarea>
+</section>
 
+<!-- VIDEO IMPROVEMENTS -->
+<section class="content-section" id="improvementsSection" hidden>
+    <h2>Video Improvements</h2>
+    <p>Write the improvements you want to make to your video.</p>
+
+    <textarea
+        id="improvementsInput"
+        placeholder="Write your video improvements here..."
+        rows="6"
+    ></textarea>
+</section>
     <!-- DOWNLOAD -->
     <button id="downloadVideoBtn" class="download-button">
         ↓ Download Video
