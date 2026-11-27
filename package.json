@@ -1,0 +1,14 @@
+{
+  "name": "storyforge-audit-package",
+  "version": "0.1.0",
+  "private": true,
+  "description": "StoryForge website and backend snapshot with deterministic local story planning endpoint for functional audit",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}
