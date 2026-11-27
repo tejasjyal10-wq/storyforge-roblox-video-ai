@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#10111b">
+  <title>Final Video Review | StoryForge</title>
+  <link rel="stylesheet" href="video-review.css">
+</head>
+<body>
+  <main class="review-shell">
+    <header class="topbar">
+      <a class="brand" href="index.html" aria-label="StoryForge home"><span class="brand-mark">✦</span> StoryForge</a>
+      <span class="step-label">FINAL REVIEW</span>
+    </header>
+
+    <section class="intro" aria-labelledby="page-title">
+      <p class="eyebrow">YOUR STORY, ON SCREEN</p>
+      <h1 id="page-title">The final cut.</h1>
+      <p class="intro-copy">Watch your video, leave your notes, and shape what you want to improve next.</p>
+    </section>
+
+    <section class="video-section" aria-label="Video preview">
+      <div class="video-frame" id="videoFrame">
+        <video id="reviewVideo" controls playsinline preload="metadata" hidden></video>
+        <div class="video-empty" id="videoEmpty">
+          <div class="play-symbol" aria-hidden="true">▶</div>
+          <h2>Your video preview</h2>
+          <p>Choose a video file to review it here.</p>
+          <label class="upload-button" for="videoFile">Choose video</label>
+          <input id="videoFile" type="file" accept="video/*" hidden>
+        </div>
+      </div>
+      <div class="video-meta"><span id="videoName">No video selected</span><button class="text-button" id="changeVideo" type="button" hidden>Change video</button></div>
+    </section>
+
+
+    <section class="feedback-section panel" aria-labelledby="feedback-title">
+      <div class="section-heading"><div><p class="eyebrow">YOUR NOTES</p><h2 id="feedback-title">How does it feel?</h2></div><span class="section-number">01</span></div>
+      <p class="section-copy">Tell us what works, what feels off, or what you want the audience to notice.</p>
+      <div class="rating-row" role="group" aria-label="Overall video rating">
+        <button class="rating" data-rating="1" type="button">Needs work</button>
+        <button class="rating" data-rating="2" type="button">Getting there</button>
+        <button class="rating" data-rating="3" type="button">Good</button>
+        <button class="rating" data-rating="4" type="button">Great</button>
+      </div>
+      <label class="field-label" for="feedback">Your feedback</label>
+      <textarea id="feedback" rows="5" placeholder="Share your thoughts about pacing, scenes, sound, visuals, or storytelling…"></textarea>
+      <div class="feedback-actions"><span id="saveStatus" aria-live="polite">Feedback is saved on this device.</span><button class="button-secondary" id="saveFeedback" type="button">Save notes</button></div>
+    </section>
+
+
+    <section class="improve-section panel" aria-labelledby="improve-title">
+      <div class="section-heading"><div><p class="eyebrow">NEXT ITERATION</p><h2 id="improve-title">Make it even better.</h2></div><span class="section-number">02</span></div>
+      <p class="section-copy">Select the areas you want to focus on. StoryForge will assemble a clear improvement brief from your choices and notes.</p>
+      <div class="improvement-grid">
+        <label class="improvement-option"><input type="checkbox" value="Story clarity and emotional impact"><span><b>Story</b><small>Clarity, emotion, and stronger moments</small></span></label>
+        <label class="improvement-option"><input type="checkbox" value="Visuals and composition"><span><b>Visuals</b><small>Composition, lighting, and consistency</small></span></label>
+        <label class="improvement-option"><input type="checkbox" value="Scene pacing and transitions"><span><b>Pacing</b><small>Timing, flow, and transitions</small></span></label>
+        <label class="improvement-option"><input type="checkbox" value="Sound and music balance"><span><b>Audio</b><small>Sound, voice, and music balance</small></span></label>
+      </div>
+      <div class="improve-actions"><button class="button-primary" id="buildBrief" type="button">Build improvement brief</button><button class="button-secondary" id="copyBrief" type="button" disabled>Copy brief</button></div>
+      <div class="brief-output" id="briefOutput" hidden aria-live="polite"><h3>Your improvement brief</h3><pre id="briefText"></pre></div>
+    </section>
+
+    <footer class="review-footer"><a class="home-link" href="index.html">← Return to Homepage</a><p>Made with StoryForge</p></footer>
+  </main>
+  <script src="video-review.js"></script>
+</body>
+</html>
