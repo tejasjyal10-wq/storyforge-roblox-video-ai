@@ -18,74 +18,107 @@ class AgentTaskScheduler {
     this.planTaskMap = new Map();
   }
 
-  schedulePlan(planId) {
-    const plan = this.planner.getPlan(planId);
+  getPlan(planId) {
+    return this.planner.getPlan(planId);
+  }
 
-    if (!plan) {
-      return { success: false, error: 'Plan not found.' };
-    }
+  getTaskId(task) {
+    return task.taskId || task.id;
+  }
 
-    if (this.planTaskMap.has(planId)) {
-      return {
-        success: false,
-        error: 'Plan has already been scheduled.',
-      };
-    }
+  getReadyTasks(planId) {
+    const tasks = this.planner.getReadyTasks(planId) || [];
+    return tasks.filter((task) => {
+      const taskId = this.getTaskId(task);
+      return taskId && !this.scheduled.has(taskId);
+    });
+  }
 
-    const readyTasks = this.planner.getReadyTasks(planId) || [];
-    const scheduledTaskIds = [];
+  scheduleReadyTasks(planId) {
+    const readyTasks = this.getReadyTasks(planId);
+    const taskIds = [];
 
     for (const task of readyTasks) {
-      const taskId = task.taskId || task.id;
+      const taskId = this.getTaskId(task);
 
-      if (!taskId || this.scheduled.has(taskId)) {
-        continue;
-      }
-
-      const queued = this.queue.enqueue({
+      const result = this.queue.enqueue({
         taskId,
         title: task.title || task.name || taskId,
         payload: task,
         priority: task.priority || 0,
         metadata: {
           planId,
-          ...task.metadata,
+          ...(task.metadata || {}),
         },
       });
 
-      if (!queued || !queued.success) {
+      if (!result || !result.success) {
         continue;
       }
 
       this.scheduled.set(taskId, {
         taskId,
         planId,
-        status: 'queued',
         task,
+        status: 'queued',
         queuedAt: new Date().toISOString(),
       });
 
-      scheduledTaskIds.push(taskId);
+      taskIds.push(taskId);
     }
 
-    this.planTaskMap.set(planId, scheduledTaskIds);
+    const existing = this.planTaskMap.get(planId) || [];
+    this.planTaskMap.set(
+      planId,
+      [...new Set([...existing, ...taskIds])]
+    );
+
+    return taskIds;
+  }
+
+  schedulePlan(planId) {
+    const plan = this.getPlan(planId);
+
+    if (!plan) {
+      return {
+        success: false,
+        error: 'Plan not found.',
+      };
+    }
+
+    if (this.planTaskMap.has(planId)) {
+      return {
+        success: false,
+        error: 'Plan already registered.',
+      };
+    }
+
+    const taskIds = this.scheduleReadyTasks(planId);
+
+    this.planTaskMap.set(
+      planId,
+      this.planTaskMap.get(planId) || taskIds
+    );
 
     return {
       success: true,
       planId,
-      scheduled: scheduledTaskIds.length,
-      taskIds: scheduledTaskIds,
+      scheduled: taskIds.length,
+      taskIds,
     };
   }
 
   dispatchNext() {
-    const queuedTask = this.queue.peek();
+    const queued = this.queue.peek();
 
-    if (!queuedTask) {
-      return { success: false, error: 'Queue is empty.' };
+    if (!queued) {
+      return {
+        success: false,
+        error: 'Queue is empty.',
+      };
     }
 
-    const taskId = queuedTask.taskId;
+    const taskId = queued.taskId;
 
     if (this.active.has(taskId)) {
       return {
@@ -97,18 +130,21 @@ class AgentTaskScheduler {
     const task = this.queue.dequeue();
 
     if (!task) {
-      return { success: false, error: 'Unable to dequeue task.' };
+      return {
+        success: false,
+        error: 'Unable to dequeue task.',
+      };
     }
 
     const started = this.queue.startTask(taskId);
 
     if (!started || !started.success) {
-      this.queue.failTask(taskId, 'Unable to start queued task.');
+      this.queue.failTask(taskId, 'Unable to start task.');
 
       return {
         success: false,
         taskId,
-        error: 'Unable to start queued task.',
+        error: 'Unable to start task.',
       };
     }
 
@@ -129,21 +165,21 @@ class AgentTaskScheduler {
     if (!assignmentResult || !assignmentResult.success) {
       this.queue.failTask(
         taskId,
-        assignmentResult?.error || 'No suitable agent available.'
+        assignmentResult?.error || 'Assignment failed.'
       );
-
-      this.failed.set(taskId, {
-        taskId,
-        status: 'assignment_failed',
-        error: assignmentResult?.error || 'No suitable agent available.',
-        failedAt: new Date().toISOString(),
-      });
 
       const scheduled = this.scheduled.get(taskId);
 
       if (scheduled) {
         scheduled.status = 'assignment_failed';
       }
+
+      this.failed.set(taskId, {
+        taskId,
+        status: 'assignment_failed',
+        error: assignmentResult?.error || 'Assignment failed.',
+        failedAt: new Date().toISOString(),
+      });
 
       return {
         success: false,
@@ -174,7 +210,10 @@ class AgentTaskScheduler {
     }
 
     if (activeTask.planId) {
-      this.planner.startTask(activeTask.planId, task.payload.id || taskId);
+      this.planner.startTask(
+        activeTask.planId,
+        task.payload.id || taskId
+      );
     }
 
     return {
@@ -189,7 +228,10 @@ class AgentTaskScheduler {
   dispatchAvailable(limit = Infinity) {
     const results = [];
 
-    while (results.length < limit && this.queue.getQueuedTasks().length > 0) {
+    while (
+      results.length < limit &&
+      this.queue.getQueuedTasks().length > 0
+    ) {
       const result = this.dispatchNext();
       results.push(result);
 
@@ -202,6 +244,17 @@ class AgentTaskScheduler {
       success: true,
       dispatched: results.filter((result) => result.success).length,
       results,
+    };
+  }
+
+  refreshPlan(planId) {
+    const taskIds = this.scheduleReadyTasks(planId);
+
+    return {
+      success: true,
+      planId,
+      newlyScheduled: taskIds.length,
+      taskIds,
     };
   }
 
@@ -250,11 +303,16 @@ class AgentTaskScheduler {
       scheduled.status = 'completed';
     }
 
+    const refreshed = activeTask.planId
+      ? this.refreshPlan(activeTask.planId)
+      : null;
+
     return {
       success: true,
       taskId,
       status: 'completed',
       result,
+      refreshed,
     };
   }
 
@@ -341,7 +399,9 @@ class AgentTaskScheduler {
     this.failed.clear();
     this.planTaskMap.clear();
 
-    return { success: true };
+    return {
+      success: true,
+    };
   }
 }
 
