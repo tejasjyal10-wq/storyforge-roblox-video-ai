@@ -728,3 +728,351 @@ a {
     top: 0 !important;
   }
 }
+/* =========================================
+   STORYFORGE — PRODUCTION PAGE
+   Matches the existing cinematic red theme
+========================================= */
+
+.production-page {
+    width: min(1100px, 90%);
+    margin: 60px auto;
+    color: var(--white);
+    animation: enter 0.7s ease both;
+}
+
+/* PAGE HEADING */
+
+.production-page > h1,
+.video-section > h1 {
+    font-size: clamp(30px, 5vw, 48px);
+    font-weight: 900;
+    letter-spacing: -2px;
+    margin-bottom: 25px;
+}
+
+.production-page h2 {
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 20px;
+}
+
+/* VIDEO */
+
+.video-section {
+    width: 100%;
+}
+
+.video-wrapper {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    background: #050505;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0, 0, 0, 0.45);
+}
+
+.video-wrapper video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #050505;
+}
+
+.video-placeholder {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(229, 9, 36, 0.08),
+            transparent 60%
+        ),
+        #080808;
+    color: var(--muted);
+    text-align: center;
+    padding: 20px;
+}
+
+.video-placeholder h2 {
+    margin-top: 15px;
+    color: var(--white);
+    font-size: clamp(17px, 3vw, 25px);
+}
+
+.video-placeholder p {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 8px;
+}
+
+.play-icon {
+    width: 75px;
+    height: 75px;
+    border: 1px solid rgba(229, 9, 36, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 27px;
+    color: var(--red);
+    background: rgba(229, 9, 36, 0.08);
+    box-shadow: 0 0 30px var(--red-glow);
+}
+
+/* PRODUCTION PROGRESS */
+
+.progress-section {
+    margin-top: 30px;
+    padding: 25px;
+    background: linear-gradient(145deg, #111111, #0b0b0b);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+}
+
+.progress-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 16px;
+}
+
+.progress-heading span:first-child {
+    font-size: 12px;
+    font-weight: bold;
+    letter-spacing: 1.5px;
+    color: #b5b5b5;
+    text-transform: uppercase;
+}
+
+#progressPercentage {
+    font-size: 27px;
+    font-weight: 900;
+    color: var(--red);
+}
+
+.progress-track {
+    width: 100%;
+    height: 8px;
+    background: #252525;
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    width: 0%;
+    height: 100%;
+    background: linear-gradient(90deg, #a50018, var(--red));
+    border-radius: inherit;
+    box-shadow: 0 0 15px var(--red-glow);
+    transition: width 0.6s ease;
+}
+
+/* FEEDBACK + IMPROVEMENTS */
+
+.content-section {
+    margin-top: 28px;
+    padding: 30px;
+    background: linear-gradient(145deg, #141414, #0c0c0c);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    transition: border-color 0.3s ease;
+}
+
+.content-section:hover {
+    border-color: rgba(229, 9, 36, 0.25);
+}
+
+.content-section h2 {
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--border);
+    font-size: 22px;
+}
+
+.content-section p,
+.content-section > div {
+    color: #999;
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+/* BUTTONS */
+
+.production-page .download-button,
+.production-page .home-button {
+    display: flex;
+    width: 100%;
+    min-height: 54px;
+    justify-content: center;
+    align-items: center;
+    padding: 16px 22px;
+    margin-top: 20px;
+    border-radius: 5px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    transition: 0.3s ease;
+}
+
+.production-page .download-button {
+    background: var(--red);
+    color: white;
+    border: 1px solid var(--red);
+    box-shadow: 0 0 0 transparent;
+}
+
+.production-page .download-button:hover {
+    background: #ff1735;
+    box-shadow: 0 0 25px var(--red-glow);
+    transform: translateY(-2px);
+}
+
+.production-page .home-button {
+    background: #111111;
+    color: #aaa;
+    border: 1px solid var(--border);
+}
+
+.production-page .home-button:hover {
+    color: white;
+    border-color: rgba(229, 9, 36, 0.5);
+    background: #171111;
+}
+
+/* PAGE NAVIGATION — reconstructed page */
+
+.navbar {
+    height: 78px;
+    padding: 0 7%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(8, 8, 8, 0.92);
+    border-bottom: 1px solid var(--border);
+}
+
+.navbar h2 {
+    color: var(--red);
+    font-weight: 900;
+    letter-spacing: 2px;
+}
+
+.nav-links {
+    display: flex;
+    gap: 28px;
+    align-items: center;
+}
+
+.nav-links a {
+    color: #999;
+    font-size: 12px;
+    transition: 0.25s;
+}
+
+.nav-links a:hover {
+    color: white;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 700px) {
+
+    .production-page {
+        width: 92%;
+        margin: 30px auto;
+    }
+
+    .video-section > h1 {
+        font-size: 32px;
+    }
+
+    .video-wrapper {
+        aspect-ratio: 16 / 9;
+        border-radius: 5px;
+    }
+
+    .play-icon {
+        width: 55px;
+        height: 55px;
+        font-size: 21px;
+    }
+
+    .video-placeholder h2 {
+        font-size: 16px;
+    }
+
+    .video-placeholder p {
+        font-size: 11px;
+    }
+
+    .progress-section {
+        padding: 18px;
+        margin-top: 20px;
+    }
+
+    #progressPercentage {
+        font-size: 23px;
+    }
+
+    .content-section {
+        padding: 22px 18px;
+        margin-top: 20px;
+    }
+
+    .content-section h2 {
+        font-size: 19px;
+    }
+
+    .content-section p,
+    .content-section > div {
+        font-size: 13px;
+    }
+
+    .navbar {
+        height: 65px;
+        padding: 0 16px;
+    }
+
+    .navbar h2 {
+        font-size: 18px;
+    }
+
+    .nav-links {
+        gap: 13px;
+    }
+
+    .nav-links a {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 400px) {
+
+    .navbar {
+        flex-direction: column;
+        height: auto;
+        padding: 14px;
+        gap: 12px;
+    }
+
+    .nav-links {
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .progress-heading span:first-child {
+        font-size: 10px;
+    }
+
+    .production-page .download-button,
+    .production-page .home-button {
+        font-size: 10px;
+    }
+}
