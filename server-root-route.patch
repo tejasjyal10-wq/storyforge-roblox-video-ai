@@ -1,0 +1,6 @@
+--- a/server.js
++++ b/server.js
+@@
+-app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'index.html')));
++// Serve the active public homepage (the old root Index.html is a legacy workspace).
++app.get('/', (_req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
