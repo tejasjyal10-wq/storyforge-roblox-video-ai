@@ -297,12 +297,7 @@ app.get('/api/jobs/:jobId', async (req, res) => {
   if (!job) return res.status(404).json({ error: 'Job not found. It may have expired after a server restart.' });
   if (!job.videoId || ['queued', 'submitting', 'retrying', 'retry_wait', 'failed'].includes(job.status)) return res.json(safeJob(job));
   if (job.status === 'completed') return res.json(safeJob(job));
-  if (job.monitoringLimitReached) return res.json(safeJob(job));
-  if (job.statusChecks >= MAX_PROVIDER_STATUS_CHECKS) {
-    job.monitoringLimitReached = true;
-    job.updatedAt = now();
-    return res.json(safeJob(job));
-  }
+  
   // Prevent concurrent duplicate provider checks for a single job.
   if (job.statusCheckPromise) {
     try { await job.statusCheckPromise; } catch { /* handled by the request below */ }
