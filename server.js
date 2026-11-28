@@ -309,20 +309,46 @@ app.get('/api/jobs/:jobId', async (req, res) => {
     const data = await apiFetch(`${BASE}/agnesapi?${params}`);
     const providerStatus = String(data.status || '').toLowerCase();
     const url = data.url || data.video_url || data.output?.url || data.result?.url;
-    if (['completed', 'complete', 'success', 'succeeded', 'done'].includes(providerStatus) && url) {
-      job.status = 'completed'; job.videoUrl = url; job.providerData = data;
-      if (job.versionId && job.videoKey) {
-        const v = getVersionList(job.videoKey).find(x => x.versionId === job.versionId);
-        if (v) { v.videoUrl = url; v.status = 'available'; }
-        const record = ensureVideo(job.videoKey, url); record.videoUrl = url; record.updatedAt = now();
+
+if (['completed', 'complete', 'success', 'succeeded', 'done'].includes(providerStatus)) {
+  if (url) {
+    job.status = 'completed';
+    job.videoUrl = url;
+    job.providerData = data;
+
+    if (job.versionId && job.videoKey) {
+      const v = getVersionList(job.videoKey).find(x => x.versionId === job.versionId);
+      if (v) {
+        v.videoUrl = url;
+        v.status = 'available';
       }
-    } else if (['failed', 'error', 'cancelled'].includes(providerStatus)) {
-      job.status = 'failed'; job.error = data.error || data.message || 'Video generation failed'; job.providerData = data;
-      if (job.versionId && job.videoKey) { const v = getVersionList(job.videoKey).find(x => x.versionId === job.versionId); if (v) v.status = 'failed'; }
-    } else {
-      job.status = providerStatus || 'processing'; job.progress = Number(data.progress) || 0;
-    }
-    job.updatedAt = now();
+
+      const record = ensureVideo(job.videoKey, url);
+      record.videoUrl = url;
+      record.updatedAt = now();
+    } 
+  } else {
+    job.status = 'processing';
+    job.providerData = data;
+    job.error = null;
+  }
+} else if (['failed', 'error', 'cancelled'].includes(providerStatus)) {
+  job.status = 'failed';
+  job.error = data.error || data.message || 'Video generation failed';
+  job.providerData = data;
+
+  if (job.versionId && job.videoKey) {
+    const v = getVersionList(job.videoKey).find(x => x.versionId === job.versionId);
+    if (v) v.status = 'failed';
+  }
+} else {
+  job.status = 'processing';
+  job.progress = Number(data.progress) || 0;
+  job.providerData = data;
+}
+
+job.updatedAt = now();
+      
   })();
   try { await job.statusCheckPromise; res.json(safeJob(job)); }
   catch (error) { res.status(502).json({ error: error.message, jobId: job.jobId, status: job.status }); }
