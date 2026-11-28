@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>StoryForge | Production</title>
+<link rel="stylesheet" href="/style.css">
+<style>
+.production-page{max-width:1000px;margin:24px auto;padding:18px}
+.video-wrapper{position:relative;min-height:240px;background:#111827;border-radius:16px;overflow:hidden}
+#productionVideo{width:100%;max-height:65vh;display:none;background:#000}
+.video-placeholder{min-height:240px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#e5e7eb;text-align:center;padding:20px}
+#generationStatus{margin:14px 0;padding:12px;border-radius:10px;background:#1f2937;color:#e5e7eb;overflow-wrap:anywhere}
+#generationStatus[data-kind="error"]{background:#4b2025;color:#ffe1e4}
+#generationStatus[data-kind="success"]{background:#173b2b;color:#d7ffea}
+#generationStatus[data-kind="working"]{background:#24324a;color:#e0efff}
+.generation-prompt{width:100%;min-height:110px;box-sizing:border-box;background:#101827;color:#e7edf7;border:1px solid #34445d;border-radius:10px;padding:12px;margin:12px 0}
+#generateVideoBtn{padding:14px 20px;border:0;border-radius:10px;cursor:pointer;font-weight:700}
+#generateVideoBtn:disabled{opacity:.6;cursor:wait}
+#downloadVideoBtn:disabled{opacity:.5;cursor:not-allowed}
+</style>
+</head>
+<body>
+<nav class="navbar">
+  <h2>StoryForge</h2>
+  <div class="nav-links">
+    <a href="/">Home</a>
+    <a href="/studio.html">Studio</a>
+    <a href="/production.html">Production</a>
+  </div>
+</nav>
+<main class="production-page">
+  <section class="video-section">
+    <h1>Your Video</h1>
+    <div class="video-wrapper">
+      <video id="productionVideo" controls playsinline></video>
+      <div class="video-placeholder" id="videoPlaceholder">
+        <div class="play-icon">▶</div>
+        <h2>Your generated video will appear here</h2>
+      </div>
+    </div>
+    <div class="progress-section">
+      <div class="progress-heading"><span>Generation Progress</span><span id="progressPercentage">0%</span></div>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <p id="generationStatus" role="status" aria-live="polite" data-kind="info">Ready to generate.</p>
+    <button id="generateVideoBtn" type="button">GENERATE VIDEO</button>
+    <button id="downloadVideoBtn" class="download-button" type="button" disabled>↓ Download Video</button>
+    <h2>Generation prompt</h2>
+    <p>This prompt is built from your Studio story and settings.</p>
+    <textarea id="generationPrompt" class="generation-prompt" readonly placeholder="Your prompt will appear here when generation starts."></textarea>
+  </section>
+  <section class="content-section" id="feedbackSection" hidden>
+    <h2>Feedback</h2><p>Write your feedback about the generated video.</p>
+    <textarea id="feedbackInput" placeholder="Write feedback here..." rows="6"></textarea>
+  </section>
+  <section class="content-section" id="improvementsSection" hidden>
+    <h2>Video Improvements</h2><p>Describe what you would like improved next.</p>
+    <textarea id="improvementsInput" placeholder="Describe improvements..." rows="6"></textarea>
+  </section>
+  <a href="/studio.html" class="home-button">← Return to Studio</a>
+</main>
+<script src="/production.js"></script>
+</body>
+</html>
